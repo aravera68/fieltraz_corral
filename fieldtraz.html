@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>FieldTraz</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FieldTraz">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#0d0d0d">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #181818;
+      --surface2: #222;
+      --border: #2e2e2e;
+      --accent: #e8a000;
+      --accent-dim: #6b4a00;
+      --text: #efefef;
+      --text-dim: #777;
+      --green: #2e8b57;
+      --red: #b03030;
+      --blue: #2265a0;
+      --purple: #7b52a8;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 520px;
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .header-logo { display: flex; flex-direction: column; }
+    .header-title { font-size: 21px; font-weight: 900; color: var(--accent); letter-spacing: 3px; line-height: 1; }
+    .header-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
+    .back-btn {
+      background: none; border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer;
+      padding: 6px 12px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .back-btn:active { background: var(--accent-dim); }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 14px 16px; }
+    .screen.active { display: block; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 10px; letter-spacing: 3px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+    }
+
+    /* ── SESSION CARDS ── */
+    .session-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--accent); padding: 13px 15px;
+      margin-bottom: 10px; cursor: pointer; user-select: none;
+    }
+    .session-card:active { background: var(--surface2); }
+    .session-name { font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .session-meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+    .tag {
+      display: inline-block; font-size: 9px; padding: 2px 7px;
+      border: 1px solid; margin-top: 7px; letter-spacing: 2px; font-weight: 700;
+    }
+    .tag-pesaje     { color: #e8a000; border-color: #e8a000; }
+    .tag-servicio   { color: #4a9eda; border-color: #4a9eda; }
+    .tag-prenez     { color: #a07ad4; border-color: #a07ad4; }
+    .tag-sanitacion { color: #4ec47a; border-color: #4ec47a; }
+    .tag-venta      { color: #e87040; border-color: #e87040; }
+    .tag-mortandad  { color: #c04040; border-color: #c04040; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center; padding: 50px 20px; color: var(--text-dim);
+    }
+    .empty .icon { font-size: 44px; margin-bottom: 14px; }
+    .empty p { font-size: 13px; letter-spacing: 1px; line-height: 1.8; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: block; width: 100%; padding: 15px 12px;
+      font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn:active { filter: brightness(0.8); }
+    .btn + .btn { margin-top: 10px; }
+    .btn-primary  { background: var(--accent); color: #000; }
+    .btn-outline  { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+    .btn-success  { background: var(--green); color: #fff; }
+    .btn-danger   { background: var(--red); color: #fff; }
+    .btn-sm       { width: auto; display: inline-block; padding: 7px 12px; font-size: 11px; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block; font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 13px 12px;
+      font-family: 'Courier New', monospace; font-size: 15px;
+      outline: none; appearance: none; border-radius: 0;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23777' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+    select option { background: #222; }
+    .row { display: flex; gap: 10px; }
+    .row .form-group { flex: 1; min-width: 0; }
+
+    /* ── SESSION HEADER BOX ── */
+    .session-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-top: 3px solid var(--accent); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .session-box h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .session-box .meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+    .count-chip {
+      display: inline-block; background: var(--accent); color: #000;
+      font-size: 11px; font-weight: 700; padding: 2px 10px; margin-top: 8px; letter-spacing: 2px;
+    }
+
+    /* ── TREATMENT INFO BOX ── */
+    .treat-box {
+      background: var(--surface2); border: 1px solid var(--accent-dim);
+      padding: 12px 14px; margin-bottom: 14px;
+    }
+    .treat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 2px; }
+    .treat-item { }
+    .treat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .treat-value { font-size: 13px; color: var(--text); margin-top: 1px; }
+
+    /* ── INPUT AREA ── */
+    .input-area {
+      background: var(--surface); border: 2px solid var(--accent);
+      padding: 14px; margin-bottom: 14px;
+    }
+    .input-area-title {
+      font-size: 10px; letter-spacing: 3px; color: var(--accent);
+      text-transform: uppercase; margin-bottom: 12px; font-weight: 700;
+    }
+
+    /* ── RECORD ITEMS ── */
+    .record-item {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 11px 13px; margin-bottom: 7px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .record-id { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .record-data { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .record-comment { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
+    .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .record-time { font-size: 11px; color: var(--text-dim); }
+    .del-btn {
+      background: none; border: 1px solid var(--red); color: var(--red);
+      padding: 3px 8px; font-family: 'Courier New', monospace; font-size: 11px; cursor: pointer;
+    }
+    .del-btn:active { background: var(--red); color: #fff; }
+
+    /* ── PREÑEZ SUMMARY ── */
+    .prenez-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--purple); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .prenez-summary-title {
+      font-size: 9px; letter-spacing: 3px; color: var(--purple);
+      text-transform: uppercase; font-weight: 700; margin-bottom: 12px;
+    }
+    .prenez-totals { display: flex; gap: 0; margin-bottom: 14px; }
+    .prenez-total-cell {
+      flex: 1; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
+    }
+    .prenez-total-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .prenez-total-cell:first-child { padding-left: 0; }
+    .prenez-total-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .prenez-total-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 2px; }
+    .prenez-total-pct { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+    /* Stacked bar */
+    .prenez-bar-wrap { margin-bottom: 12px; }
+    .prenez-bar {
+      height: 10px; display: flex; overflow: hidden; background: var(--border); margin-bottom: 6px;
+    }
+    .bar-seg { height: 100%; transition: width 0.4s; }
+    .bar-pg  { background: #2e8b57; }
+    .bar-pm  { background: #5ab878; }
+    .bar-pc  { background: #98dba8; }
+    .bar-pcut{ background: #c8f0d2; }
+    .bar-vb  { background: #888; }
+    .bar-vd  { background: #444; }
+
+    /* Category rows */
+    .prenez-cats { display: flex; flex-direction: column; gap: 5px; }
+    .cat-row { display: flex; align-items: center; gap: 8px; }
+    .cat-dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .cat-name { font-size: 11px; color: var(--text-dim); flex: 1; }
+    .cat-count { font-size: 13px; font-weight: 700; color: var(--text); min-width: 24px; text-align: right; }
+    .cat-pct { font-size: 11px; color: var(--text-dim); min-width: 42px; text-align: right; }
+
+    /* ── PESAJE SUMMARY ── */
+    .pesaje-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--green); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .pesaje-summary-title {
+      font-size: 9px; letter-spacing: 3px; color: var(--green);
+      text-transform: uppercase; font-weight: 700; margin-bottom: 10px;
+    }
+    .pesaje-stats { display: flex; gap: 0; flex-wrap: wrap; }
+    .stat-cell {
+      flex: 1; min-width: 0; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .stat-cell:first-child { padding-left: 0; }
+    .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 2px; line-height: 1; }
+    .stat-unit { font-size: 11px; color: var(--text-dim); }
+
+    /* ── DIVIDER ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: 22px; right: 18px; width: 58px; height: 58px;
+      background: var(--accent); color: #000; border: none; font-size: 30px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(232,160,0,0.45); border-radius: 0;
+      font-family: 'Courier New', monospace; font-weight: 700;
+    }
+    .fab:active { filter: brightness(0.8); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 10px 20px;
+      font-family: 'Courier New', monospace; font-size: 13px; letter-spacing: 1px;
+      opacity: 0; pointer-events: none; z-index: 999; transition: opacity 0.25s;
+      white-space: nowrap;
+    }
+    .toast.error { background: var(--red); }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <div class="header-title">FIELDTRAZ</div>
+    <div class="header-sub">GESTIÓN DE CAMPO</div>
+  </div>
+  <div id="headerAction"></div>
+</div>
+
+<!-- ════════════════════════════════════
+     PANTALLA: INICIO
+     ════════════════════════════════════ -->
+<div id="screenHome" class="screen active">
+  <p class="section-label">Sesiones de trabajo</p>
+  <div id="sessionList"></div>
+  <button class="fab" onclick="goNewSession()" title="Nueva sesión">+</button>
+</div>
+
+<!-- ════════════════════════════════════
+     PANTALLA: NUEVA SESIÓN
+     ════════════════════════════════════ -->
+<div id="screenNew" class="screen">
+  <p class="section-label">Crear nueva sesión</p>
+
+  <div class="form-group">
+    <label>Nombre de la sesión</label>
+    <input id="newName" type="text" placeholder="Ej: Pesaje Novillos Lote A" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label>Tipo de tarea</label>
+    <select id="newType" onchange="onTypeChange()">
+      <option value="">— Seleccionar —</option>
+      <option value="pesaje">Pesaje</option>
+      <option value="servicio">Servicio (Monta / IA)</option>
+      <option value="prenez">Diagnóstico de Preñez</option>
+      <option value="sanitacion">Sanitación / Vacunación</option>
+      <option value="venta">Venta / Auditoría</option>
+      <option value="mortandad">Mortandad</option>
+    </select>
+  </div>
+
+  <!-- Campos extra para sanitación -->
+  <div id="sanFields" style="display:none">
+    <hr>
+    <p class="section-label">Datos del tratamiento</p>
+    <div class="form-group">
+      <label>Producto</label>
+      <input id="sanProducto" type="text" placeholder="Ej: Ivermectina 1%" autocomplete="off">
+    </div>
+    <div class="row">
+      <div class="form-group">
+        <label>Dosis (ml)</label>
+        <input id="sanDosis" type="number" placeholder="0.0" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Vía de aplicación</label>
+        <select id="sanVia">
+          <option value="SC">SC — Subcutánea</option>
+          <option value="IM">IM — Intramuscular</option>
+          <option value="IV">IV — Intravenosa</option>
+          <option value="PO">PO — Oral</option>
+          <option value="Pour-on">Pour-on</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Lote / N° de frasco</label>
+      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off">
+    </div>
+  </div>
+
+  <hr>
+  <button class="btn btn-primary" onclick="createSession()">CREAR SESIÓN</button>
+  <button class="btn btn-outline" onclick="goHome()">CANCELAR</button>
+</div>
+
+<!-- ════════════════════════════════════
+     PANTALLA: DETALLE DE SESIÓN
+     ════════════════════════════════════ -->
+<div id="screenSession" class="screen">
+  <div class="session-box" id="sessBox"></div>
+  <div id="treatBox"></div>
+
+  <!-- Área de ingreso -->
+  <div class="input-area">
+    <div class="input-area-title" id="inputTitle">Registrar animal</div>
+    <div id="inputFields"></div>
+    <button class="btn btn-primary" onclick="addRecord()">+ REGISTRAR ANIMAL</button>
+  </div>
+
+  <!-- Resumen pesaje (solo para sesiones de pesaje) -->
+  <div id="pesajeSummary" style="display:none"></div>
+
+  <!-- Lista de registros -->
+  <p class="section-label" id="recLabel">REGISTROS</p>
+  <div id="recList"></div>
+
+  <hr>
+  <button class="btn btn-success" onclick="exportExcel()">↓ EXPORTAR EXCEL</button>
+  <button class="btn btn-danger" onclick="deleteSession()">✕ ELIMINAR SESIÓN</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATABASE — IndexedDB
+   ═══════════════════════════════════════════════════════════ */
+const DB_NAME = 'fieldtraz_v1';
+let db, currentSessId = null;
+
+function initDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('sessions')) {
+        d.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true })
+         .createIndex('createdAt', 'createdAt');
+      }
+      if (!d.objectStoreNames.contains('records')) {
+        d.createObjectStore('records', { keyPath: 'id', autoIncrement: true })
+         .createIndex('sessionId', 'sessionId');
+      }
+    };
+    r.onsuccess = e => { db = e.target.result; res(); };
+    r.onerror = e => rej(e.target.error);
+  });
+}
+
+const tx = (store, mode = 'readonly') => db.transaction(store, mode).objectStore(store);
+
+function dbAdd(store, obj) {
+  return new Promise((res, rej) => {
+    const r = tx(store, 'readwrite').add(obj);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGet(store, id) {
+  return new Promise((res, rej) => {
+    const r = tx(store).get(id);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const r = tx(store).getAll();
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGetByIdx(store, idx, val) {
+  return new Promise((res, rej) => {
+    const r = tx(store).index(idx).getAll(val);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbDel(store, id) {
+  return new Promise((res, rej) => {
+    const r = tx(store, 'readwrite').delete(id);
+    r.onsuccess = () => res();
+    r.onerror = () => rej(r.error);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function setHeaderAction(html) {
+  document.getElementById('headerAction').innerHTML = html;
+}
+
+function goHome() {
+  setHeaderAction('');
+  showScreen('screenHome');
+  loadHome();
+}
+
+function goNewSession() {
+  document.getElementById('newName').value = '';
+  document.getElementById('newType').value = '';
+  document.getElementById('sanFields').style.display = 'none';
+  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
+  showScreen('screenNew');
+}
+
+function goSession(id) {
+  currentSessId = id;
+  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
+  showScreen('screenSession');
+  loadSession(id);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOME
+   ═══════════════════════════════════════════════════════════ */
+async function loadHome() {
+  const sessions = await dbGetAll('sessions');
+  const allRecs = await dbGetAll('records');
+  const cntMap = {};
+  allRecs.forEach(r => { cntMap[r.sessionId] = (cntMap[r.sessionId] || 0) + 1; });
+
+  sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const TYPE_LABEL = { pesaje:'PESAJE', servicio:'SERVICIO', prenez:'PREÑEZ', sanitacion:'SANITACIÓN', venta:'VENTA/AUD.', mortandad:'MORTANDAD' };
+  const container = document.getElementById('sessionList');
+
+  if (!sessions.length) {
+    container.innerHTML = `<div class="empty"><div class="icon">🐄</div><p>No hay sesiones.<br>Tocá <strong>+</strong> para crear una.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = sessions.map(s => `
+    <div class="session-card" onclick="goSession(${s.id})">
+      <div class="session-name">${esc(s.name)}</div>
+      <div class="session-meta">${fmtDate(s.date)} &nbsp;·&nbsp; ${cntMap[s.id] || 0} animales</div>
+      <span class="tag tag-${s.type}">${TYPE_LABEL[s.type]}</span>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEW SESSION
+   ═══════════════════════════════════════════════════════════ */
+function onTypeChange() {
+  document.getElementById('sanFields').style.display =
+    document.getElementById('newType').value === 'sanitacion' ? 'block' : 'none';
+}
+
+async function createSession() {
+  const name = document.getElementById('newName').value.trim();
+  const type = document.getElementById('newType').value;
+  if (!name) { toast('Ingresá un nombre de sesión', true); return; }
+  if (!type) { toast('Seleccioná el tipo de tarea', true); return; }
+
+  const sess = { name, type, date: todayDate(), createdAt: new Date().toISOString(), meta: {} };
+
+  if (type === 'sanitacion') {
+    const producto = document.getElementById('sanProducto').value.trim();
+    if (!producto) { toast('Ingresá el producto', true); return; }
+    sess.meta = {
+      producto,
+      dosis: document.getElementById('sanDosis').value || '',
+      via: document.getElementById('sanVia').value,
+      lote: document.getElementById('sanLote').value.trim()
+    };
+  }
+
+  const id = await dbAdd('sessions', sess);
+  goSession(id);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SESSION DETAIL
+   ═══════════════════════════════════════════════════════════ */
+const TYPE_FULLNAME = {
+  pesaje: 'PESAJE',
+  servicio: 'SERVICIO',
+  prenez: 'DIAGNÓSTICO DE PREÑEZ',
+  sanitacion: 'SANITACIÓN / VACUNACIÓN',
+  venta: 'VENTA / AUDITORÍA',
+  mortandad: 'MORTANDAD'
+};
+
+async function loadSession(id) {
+  const sess = await dbGet('sessions', id);
+  const recs = await dbGetByIdx('records', 'sessionId', id);
+
+  // Header box
+  const countLabel = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
+  document.getElementById('sessBox').innerHTML = `
+    <h2>${esc(sess.name)}</h2>
+    <div class="meta">${fmtDate(sess.date)} &nbsp;·&nbsp; ${TYPE_FULLNAME[sess.type]}</div>
+    <span class="count-chip">${recs.length} ${countLabel}</span>
+  `;
+
+  // Treat box (sanitacion only)
+  const tb = document.getElementById('treatBox');
+  if (sess.type === 'sanitacion' && sess.meta.producto) {
+    tb.innerHTML = `
+      <div class="treat-box">
+        <div class="treat-label">Producto</div>
+        <div class="treat-value">${esc(sess.meta.producto)}</div>
+        <div class="treat-row" style="margin-top:6px">
+          <div class="treat-item"><div class="treat-label">Dosis</div><div class="treat-value">${esc(sess.meta.dosis)} ml</div></div>
+          <div class="treat-item"><div class="treat-label">Vía</div><div class="treat-value">${esc(sess.meta.via)}</div></div>
+          <div class="treat-item"><div class="treat-label">Lote</div><div class="treat-value">${esc(sess.meta.lote || '—')}</div></div>
+        </div>
+      </div>`;
+    tb.style.display = 'block';
+  } else {
+    tb.innerHTML = '';
+  }
+
+  buildInputArea(sess.type);
+  renderRecords(recs, sess);
+}
+
+/* ── Input area per task type ── */
+function buildInputArea(type) {
+  const TITLES = {
+    pesaje: 'Registrar pesaje',
+    servicio: 'Registrar servicio',
+    prenez: 'Registrar diagnóstico',
+    sanitacion: 'Confirmar animal tratado',
+    venta: 'Registrar animal',
+    mortandad: 'Registrar baja'
+  };
+  document.getElementById('inputTitle').textContent = TITLES[type];
+
+  let html = `
+    <div class="form-group">
+      <label>ID Animal — chip RFID o caravana</label>
+      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>`;
+
+  if (type === 'pesaje') {
+    html += `
+      <div class="form-group">
+        <label>Peso (kg)</label>
+        <input id="fPeso" type="number" placeholder="0.0" step="0.1" min="0">
+      </div>`;
+  } else if (type === 'servicio') {
+    html += `
+      <div class="form-group">
+        <label>Tipo de servicio</label>
+        <select id="fTipoSrv">
+          <option value="MN">Monta Natural</option>
+          <option value="IA">Inseminación Artificial</option>
+          <option value="TE">Transferencia de Embrión</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Toro / Semental / Donante</label>
+        <input id="fToro" type="text" placeholder="ID o nombre del macho" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Observación (opcional)</label>
+        <input id="fObs" type="text" placeholder="" autocomplete="off">
+      </div>`;
+  } else if (type === 'prenez') {
+    html += `
+      <div class="form-group">
+        <label>Resultado</label>
+        <select id="fResultado">
+          <option value="Preñada Grande">Preñada Grande</option>
+          <option value="Preñada Mediana">Preñada Mediana</option>
+          <option value="Preñada Chica">Preñada Chica</option>
+          <option value="Preñada CUT">Preñada CUT</option>
+          <option value="Vacía Buena">Vacía Buena</option>
+          <option value="Vacía Descarte">Vacía Descarte</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Meses estimados (0 si vacía)</label>
+        <input id="fMeses" type="number" placeholder="0" min="0" max="9" step="1">
+      </div>`;
+  } else if (type === 'mortandad') {
+    html += `
+      <div class="form-group">
+        <label>Causa</label>
+        <select id="fCausa">
+          <option value="Enfermedad">Enfermedad</option>
+          <option value="Accidente">Accidente</option>
+          <option value="Depredador">Depredador</option>
+          <option value="Problema de Parto">Problema de Parto</option>
+          <option value="Causa Desconocida">Causa Desconocida</option>
+          <option value="Otra">Otra</option>
+        </select>
+      </div>`;
+  }
+  // sanitacion y venta: solo ID
+
+  // Comentario — campo universal opcional
+  html += `
+    <div class="form-group" style="margin-top:4px">
+      <label>Comentario (opcional)</label>
+      <input id="fComentario" type="text" placeholder="Observación libre..." autocomplete="off">
+    </div>`;
+
+  document.getElementById('inputFields').innerHTML = html;
+  setTimeout(() => { const f = document.getElementById('fAnimalId'); if (f) f.focus(); }, 80);
+}
+
+/* ── Add record ── */
+async function addRecord() {
+  const sess = await dbGet('sessions', currentSessId);
+  const animalId = document.getElementById('fAnimalId').value.trim();
+  if (!animalId) { toast('Ingresá el ID del animal', true); return; }
+
+  const rec = { sessionId: currentSessId, animalId, ts: new Date().toISOString(), data: {} };
+
+  if (sess.type === 'pesaje') {
+    const peso = document.getElementById('fPeso').value;
+    if (!peso) { toast('Ingresá el peso', true); return; }
+    rec.data = { peso: parseFloat(peso) };
+  } else if (sess.type === 'servicio') {
+    rec.data = {
+      tipo: document.getElementById('fTipoSrv').value,
+      toro: document.getElementById('fToro').value.trim(),
+      obs: document.getElementById('fObs').value.trim()
+    };
+  } else if (sess.type === 'prenez') {
+    rec.data = {
+      resultado: document.getElementById('fResultado').value,
+      meses: document.getElementById('fMeses').value || '0'
+    };
+  } else if (sess.type === 'mortandad') {
+    rec.data = {
+      causa: document.getElementById('fCausa').value
+    };
+  }
+  // venta y sanitacion: solo ID
+
+  // Comentario universal
+  const comentario = document.getElementById('fComentario');
+  if (comentario) rec.data.comentario = comentario.value.trim();
+
+  await dbAdd('records', rec);
+  toast('✓ Animal registrado');
+
+  document.getElementById('fAnimalId').value = '';
+  if (sess.type === 'pesaje') document.getElementById('fPeso').value = '';
+  if (comentario) comentario.value = '';
+  document.getElementById('fAnimalId').focus();
+
+  await loadSession(currentSessId);
+}
+
+/* ── Preñez summary ── */
+function renderPrenezSummary(recs) {
+  const box = document.getElementById('pesajeSummary'); // reuse same container
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const CATS = [
+    { key: 'Preñada Grande',  label: 'Preñada Grande',  cls: 'bar-pg',   dot: '#2e8b57' },
+    { key: 'Preñada Mediana', label: 'Preñada Mediana', cls: 'bar-pm',   dot: '#5ab878' },
+    { key: 'Preñada Chica',   label: 'Preñada Chica',   cls: 'bar-pc',   dot: '#98dba8' },
+    { key: 'Preñada CUT',     label: 'Preñada CUT',     cls: 'bar-pcut', dot: '#c8f0d2' },
+    { key: 'Vacía Buena',     label: 'Vacía Buena',     cls: 'bar-vb',   dot: '#888' },
+    { key: 'Vacía Descarte',  label: 'Vacía Descarte',  cls: 'bar-vd',   dot: '#444' },
+  ];
+
+  const total = recs.length;
+  const counts = {};
+  CATS.forEach(c => counts[c.key] = 0);
+  recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
+
+  const totalPrenadas = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT']
+    .reduce((s, k) => s + counts[k], 0);
+  const totalVacias = ['Vacía Buena','Vacía Descarte']
+    .reduce((s, k) => s + counts[k], 0);
+
+  const pct = n => total > 0 ? ((n / total) * 100).toFixed(1) + '%' : '—';
+
+  const barSegs = CATS.map(c => {
+    const w = total > 0 ? ((counts[c.key] / total) * 100).toFixed(2) : 0;
+    return `<div class="bar-seg ${c.cls}" style="width:${w}%"></div>`;
+  }).join('');
+
+  const catRows = CATS.map(c => `
+    <div class="cat-row">
+      <div class="cat-dot" style="background:${c.dot}"></div>
+      <div class="cat-name">${c.label}</div>
+      <div class="cat-count">${counts[c.key]}</div>
+      <div class="cat-pct">${pct(counts[c.key])}</div>
+    </div>`).join('');
+
+  box.innerHTML = `
+    <div class="prenez-summary">
+      <div class="prenez-summary-title">▸ Resumen de diagnóstico</div>
+      <div class="prenez-totals">
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Total</div>
+          <div class="prenez-total-value">${total}</div>
+        </div>
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Preñadas</div>
+          <div class="prenez-total-value" style="color:#5ab878">${totalPrenadas}</div>
+          <div class="prenez-total-pct">${pct(totalPrenadas)}</div>
+        </div>
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Vacías</div>
+          <div class="prenez-total-value" style="color:#888">${totalVacias}</div>
+          <div class="prenez-total-pct">${pct(totalVacias)}</div>
+        </div>
+      </div>
+      <div class="prenez-bar-wrap">
+        <div class="prenez-bar">${barSegs}</div>
+      </div>
+      <div class="prenez-cats">${catRows}</div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Pesaje summary ── */
+function renderPesajeSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
+  if (!pesos.length) { box.style.display = 'none'; return; }
+
+  const total  = pesos.length;
+  const suma   = pesos.reduce((a, b) => a + b, 0);
+  const prom   = (suma / total).toFixed(1);
+  const minP   = Math.min(...pesos).toFixed(1);
+  const maxP   = Math.max(...pesos).toFixed(1);
+
+  box.innerHTML = `
+    <div class="pesaje-summary">
+      <div class="pesaje-summary-title">▸ Resumen de pesaje</div>
+      <div class="pesaje-stats">
+        <div class="stat-cell">
+          <div class="stat-label">Animales</div>
+          <div class="stat-value">${total}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Promedio</div>
+          <div class="stat-value">${prom} <span class="stat-unit">kg</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Mínimo</div>
+          <div class="stat-value">${minP} <span class="stat-unit">kg</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Máximo</div>
+          <div class="stat-value">${maxP} <span class="stat-unit">kg</span></div>
+        </div>
+      </div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Venta summary ── */
+function renderVentaSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+  box.innerHTML = `
+    <div class="pesaje-summary" style="border-left-color:#e87040">
+      <div class="pesaje-summary-title" style="color:#e87040">▸ Resumen de venta / auditoría</div>
+      <div class="pesaje-stats">
+        <div class="stat-cell">
+          <div class="stat-label">Total animales</div>
+          <div class="stat-value" style="color:#e87040">${recs.length}</div>
+        </div>
+      </div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Mortandad summary ── */
+function renderMortandadSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
+  const counts = {};
+  CAUSAS.forEach(c => counts[c] = 0);
+  recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
+
+  const catRows = CAUSAS
+    .filter(c => counts[c] > 0)
+    .map(c => `
+      <div class="cat-row">
+        <div class="cat-dot" style="background:#c04040"></div>
+        <div class="cat-name">${c}</div>
+        <div class="cat-count">${counts[c]}</div>
+        <div class="cat-pct">${((counts[c]/recs.length)*100).toFixed(1)}%</div>
+      </div>`).join('');
+
+  box.innerHTML = `
+    <div class="pesaje-summary" style="border-left-color:#c04040">
+      <div class="pesaje-summary-title" style="color:#c04040">▸ Resumen de mortandad</div>
+      <div class="pesaje-stats" style="margin-bottom:12px">
+        <div class="stat-cell">
+          <div class="stat-label">Total bajas</div>
+          <div class="stat-value" style="color:#c04040">${recs.length}</div>
+        </div>
+      </div>
+      <div class="prenez-cats">${catRows}</div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Render records ── */
+function renderRecords(recs, sess) {
+  const label = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
+  document.getElementById('recLabel').textContent = `REGISTROS (${recs.length})`;
+  const container = document.getElementById('recList');
+
+  // Summary routing
+  if (sess.type === 'pesaje') {
+    renderPesajeSummary(recs);
+  } else if (sess.type === 'prenez') {
+    renderPrenezSummary(recs);
+  } else if (sess.type === 'venta') {
+    renderVentaSummary(recs);
+  } else if (sess.type === 'mortandad') {
+    renderMortandadSummary(recs);
+  } else {
+    document.getElementById('pesajeSummary').style.display = 'none';
+  }
+
+  if (!recs.length) {
+    container.innerHTML = `<div class="empty" style="padding:30px 20px"><p>Sin registros aún.<br>Ingresá el primer animal arriba.</p></div>`;
+    return;
+  }
+
+  const sorted = [...recs].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+  container.innerHTML = sorted.map(r => {
+    let dataStr = '';
+    if (sess.type === 'pesaje') dataStr = `${r.data.peso} kg`;
+    else if (sess.type === 'servicio') {
+      dataStr = r.data.tipo;
+      if (r.data.toro) dataStr += ` · ${r.data.toro}`;
+      if (r.data.obs) dataStr += ` · ${r.data.obs}`;
+    }
+    else if (sess.type === 'prenez') {
+      dataStr = r.data.resultado;
+      if (r.data.meses && r.data.meses !== '0') dataStr += ` · ${r.data.meses} meses`;
+    }
+    else if (sess.type === 'sanitacion') dataStr = '✓ tratado';
+    else if (sess.type === 'venta')      dataStr = '✓ auditado';
+    else if (sess.type === 'mortandad')  dataStr = r.data.causa || '';
+
+    const comentario = r.data.comentario ? `<div class="record-comment">💬 ${esc(r.data.comentario)}</div>` : '';
+    const time = new Date(r.ts).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+
+    return `
+      <div class="record-item">
+        <div style="min-width:0;flex:1">
+          <div class="record-id">${esc(r.animalId)}</div>
+          <div class="record-data">${esc(dataStr)}</div>
+          ${comentario}
+        </div>
+        <div class="record-right">
+          <span class="record-time">${time}</span>
+          <button class="del-btn" onclick="delRecord(${r.id})">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function delRecord(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  await dbDel('records', id);
+  await loadSession(currentSessId);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT TO EXCEL
+   ═══════════════════════════════════════════════════════════ */
+async function exportExcel() {
+  const sess = await dbGet('sessions', currentSessId);
+  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
+
+  if (!recs.length) { toast('No hay registros para exportar', true); return; }
+
+  const sorted = [...recs].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  let rows = [];
+
+  if (sess.type === 'pesaje') {
+    rows = sorted.map(r => ({
+      'Sesión':       sess.name,
+      'Fecha':        sess.date,
+      'Hora':         fmtTime(r.ts),
+      'ID Animal':    r.animalId,
+      'Peso (kg)':    r.data.peso,
+      'Comentario':   r.data.comentario || ''
+    }));
+  } else if (sess.type === 'servicio') {
+    rows = sorted.map(r => ({
+      'Sesión':          sess.name,
+      'Fecha':           sess.date,
+      'Hora':            fmtTime(r.ts),
+      'ID Animal':       r.animalId,
+      'Tipo':            r.data.tipo,
+      'Toro/Semental':   r.data.toro,
+      'Observación':     r.data.obs,
+      'Comentario':      r.data.comentario || ''
+    }));
+  } else if (sess.type === 'prenez') {
+    rows = sorted.map(r => ({
+      'Sesión':             sess.name,
+      'Fecha':              sess.date,
+      'Hora':               fmtTime(r.ts),
+      'ID Animal':          r.animalId,
+      'Resultado':          r.data.resultado,
+      'Meses estimados':    r.data.meses,
+      'Comentario':         r.data.comentario || ''
+    }));
+  } else if (sess.type === 'sanitacion') {
+    rows = sorted.map(r => ({
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Producto':    sess.meta.producto,
+      'Dosis (ml)':  sess.meta.dosis,
+      'Vía':         sess.meta.via,
+      'Lote':        sess.meta.lote || '',
+      'Comentario':  r.data.comentario || ''
+    }));
+  } else if (sess.type === 'venta') {
+    rows = sorted.map((r, i) => ({
+      'N°':          i + 1,
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Comentario':  r.data.comentario || ''
+    }));
+  } else if (sess.type === 'mortandad') {
+    rows = sorted.map(r => ({
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Causa':       r.data.causa || '',
+      'Comentario':  r.data.comentario || ''
+    }));
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = Object.keys(rows[0]).map(k => ({
+    wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2
+  }));
+
+  XLSX.utils.book_append_sheet(wb, ws, sess.type.toUpperCase().slice(0, 10));
+
+  // Pesaje: add summary sheet
+  if (sess.type === 'pesaje') {
+    const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
+    if (pesos.length) {
+      const suma = pesos.reduce((a, b) => a + b, 0);
+      const summaryRows = [
+        { 'Concepto': 'Total animales',   'Valor': pesos.length,                           'Unidad': '' },
+        { 'Concepto': 'Peso promedio',    'Valor': parseFloat((suma / pesos.length).toFixed(1)), 'Unidad': 'kg' },
+        { 'Concepto': 'Peso total',       'Valor': parseFloat(suma.toFixed(1)),             'Unidad': 'kg' },
+        { 'Concepto': 'Peso mínimo',      'Valor': parseFloat(Math.min(...pesos).toFixed(1)), 'Unidad': 'kg' },
+        { 'Concepto': 'Peso máximo',      'Valor': parseFloat(Math.max(...pesos).toFixed(1)), 'Unidad': 'kg' },
+      ];
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 8 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'RESUMEN');
+    }
+  }
+
+  // Preñez: add summary sheet
+  if (sess.type === 'prenez' && recs.length) {
+    const CATS = [
+      'Preñada Grande', 'Preñada Mediana', 'Preñada Chica', 'Preñada CUT',
+      'Vacía Buena', 'Vacía Descarte'
+    ];
+    const counts = {};
+    CATS.forEach(c => counts[c] = 0);
+    recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
+
+    const total = recs.length;
+    const totalPren = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].reduce((s,k) => s+counts[k], 0);
+    const totalVac  = ['Vacía Buena','Vacía Descarte'].reduce((s,k) => s+counts[k], 0);
+    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
+
+    const summaryRows = [
+      { 'Categoría': 'TOTAL ANIMALES',  'Cantidad': total,        'Porcentaje': '' },
+      { 'Categoría': '— PREÑADAS —',    'Cantidad': totalPren,    'Porcentaje': pct(totalPren) + '%' },
+      ...['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].map(k => ({
+        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
+      })),
+      { 'Categoría': '— VACÍAS —',      'Cantidad': totalVac,     'Porcentaje': pct(totalVac) + '%' },
+      ...['Vacía Buena','Vacía Descarte'].map(k => ({
+        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
+      })),
+    ];
+    const wsPrenez = XLSX.utils.json_to_sheet(summaryRows);
+    wsPrenez['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsPrenez, 'RESUMEN');
+  }
+
+  // Mortandad: add summary sheet
+  if (sess.type === 'mortandad' && recs.length) {
+    const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
+    const counts = {};
+    CAUSAS.forEach(c => counts[c] = 0);
+    recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
+    const total = recs.length;
+    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
+    const summaryRows = [
+      { 'Concepto': 'TOTAL BAJAS', 'Cantidad': total, 'Porcentaje': '' },
+      ...CAUSAS.filter(c => counts[c] > 0).map(c => ({
+        'Concepto': c, 'Cantidad': counts[c], 'Porcentaje': pct(counts[c]) + '%'
+      }))
+    ];
+    const wsMort = XLSX.utils.json_to_sheet(summaryRows);
+    wsMort['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsMort, 'RESUMEN');
+  }
+
+  // Venta: add summary sheet
+  if (sess.type === 'venta' && recs.length) {
+    const summaryRows = [
+      { 'Concepto': 'Sesión',          'Valor': sess.name },
+      { 'Concepto': 'Fecha',           'Valor': sess.date },
+      { 'Concepto': 'Total animales',  'Valor': recs.length },
+    ];
+    const wsVenta = XLSX.utils.json_to_sheet(summaryRows);
+    wsVenta['!cols'] = [{ wch: 20 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsVenta, 'RESUMEN');
+  }
+
+  const fname = `FieldTraz_${sess.name.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_')}_${sess.date}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  toast('✓ Excel exportado');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DELETE SESSION
+   ═══════════════════════════════════════════════════════════ */
+async function deleteSession() {
+  if (!confirm('¿Eliminar esta sesión y todos sus registros?\n\nEsta acción no se puede deshacer.')) return;
+  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
+  for (const r of recs) await dbDel('records', r.id);
+  await dbDel('sessions', currentSessId);
+  currentSessId = null;
+  goHome();
+  toast('Sesión eliminada');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILS
+   ═══════════════════════════════════════════════════════════ */
+function todayDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(s) {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
+}
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _toastTimer;
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════ */
+initDB()
+  .then(() => loadHome())
+  .catch(err => {
+    document.body.innerHTML = `<div style="padding:24px;color:#c00;font-family:monospace">
+      <strong>Error al iniciar la base de datos:</strong><br>${err}</div>`;
+  });
+</script>
+</body>
+</html>
