@@ -354,7 +354,7 @@
     </div>
     <div class="form-group">
       <label>Lote / N° de frasco</label>
-      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off">
+      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off" inputmode="numeric">
     </div>
   </div>
 
@@ -629,7 +629,7 @@ function buildInputArea(type) {
   let html = `
     <div class="form-group">
       <label>ID Animal — chip RFID o caravana</label>
-      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric">
     </div>`;
 
   if (type === 'pesaje') {
@@ -650,7 +650,7 @@ function buildInputArea(type) {
       </div>
       <div class="form-group">
         <label>Toro / Semental / Donante</label>
-        <input id="fToro" type="text" placeholder="ID o nombre del macho" autocomplete="off">
+        <input id="fToro" type="text" placeholder="ID o nombre del macho" autocomplete="off" inputmode="numeric">
       </div>
       <div class="form-group">
         <label>Observación (opcional)</label>
@@ -1190,9 +1190,4 @@ initDB()
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then(() => console.log('FieldTraz offline OK'))
-          .catch(err => console.warn('SW error:', err));
-      });
-    }
-  </script>
-</body>
-</html>
+          .catch(err => console.warn('SW 
