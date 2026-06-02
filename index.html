@@ -7,29 +7,33 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="FieldTraz">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="theme-color" content="#0d0d0d">
-  <script src="./xlsx.full.min.js"></script>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#e8a000">
+  <link rel="manifest" href="manifest.json">
   <style>
     :root {
-      --bg: #0d0d0d;
-      --surface: #181818;
-      --surface2: #222;
-      --border: #2e2e2e;
-      --accent: #e8a000;
-      --accent-dim: #6b4a00;
-      --text: #efefef;
-      --text-dim: #777;
-      --green: #2e8b57;
-      --red: #b03030;
-      --blue: #2265a0;
-      --purple: #7b52a8;
+      --bg:        #f0f0ef;
+      --surface:   #ffffff;
+      --surface2:  #f7f6f4;
+      --border:    #e2e0db;
+      --accent:    #e8a000;
+      --accent-dk: #b87a00;
+      --accent-lt: #fff3cc;
+      --text:      #1c1a16;
+      --text-dim:  #8a8680;
+      --green:     #2a7d50;
+      --green-lt:  #e8f5ee;
+      --red:       #b83030;
+      --red-lt:    #fdeaea;
+      --blue:      #1e5fa0;
+      --purple:    #6b44a0;
+      --purple-lt: #f2eefb;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    *, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     body {
-      font-family: 'Courier New', Courier, monospace;
+      font-family: "Courier New", Courier, monospace;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -41,7 +45,7 @@
     /* ── HEADER ── */
     .header {
       background: var(--surface);
-      border-bottom: 2px solid var(--accent);
+      border-bottom: 3px solid var(--accent);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -49,242 +53,225 @@
       position: sticky;
       top: 0;
       z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
     }
     .header-logo { display: flex; flex-direction: column; }
     .header-title { font-size: 21px; font-weight: 900; color: var(--accent); letter-spacing: 3px; line-height: 1; }
-    .header-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
+    .header-sub   { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
     .back-btn {
-      background: none; border: 1px solid var(--accent); color: var(--accent);
-      font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer;
-      padding: 6px 12px; letter-spacing: 1px; text-transform: uppercase;
+      background: none; border: none; color: var(--accent);
+      font-family: "Courier New", monospace; font-size: 13px;
+      font-weight: 700; letter-spacing: 1px; cursor: pointer;
+      padding: 6px 10px; border: 1px solid var(--accent);
     }
-    .back-btn:active { background: var(--accent-dim); }
+    .back-btn:active { background: var(--accent-lt); }
 
     /* ── SCREENS ── */
-    .screen { display: none; padding: 14px 16px; }
+    .screen { display: none; padding: 16px; }
     .screen.active { display: block; }
 
     /* ── SECTION LABEL ── */
     .section-label {
       font-size: 10px; letter-spacing: 3px; color: var(--text-dim);
-      text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+      text-transform: uppercase; margin-bottom: 12px; margin-top: 4px;
+      font-weight: 700;
     }
 
-    /* ── SESSION CARDS ── */
+    /* ── SESSION CARD ── */
     .session-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-left: 4px solid var(--accent); padding: 13px 15px;
-      margin-bottom: 10px; cursor: pointer; user-select: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
     }
-    .session-card:active { background: var(--surface2); }
+    .session-card:active { box-shadow: 0 2px 10px rgba(232,160,0,0.18); }
     .session-name { font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
     .session-meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
-    .tag {
-      display: inline-block; font-size: 9px; padding: 2px 7px;
-      border: 1px solid; margin-top: 7px; letter-spacing: 2px; font-weight: 700;
-    }
-    .tag-pesaje     { color: #e8a000; border-color: #e8a000; }
-    .tag-servicio   { color: #4a9eda; border-color: #4a9eda; }
-    .tag-prenez     { color: #a07ad4; border-color: #a07ad4; }
-    .tag-sanitacion { color: #4ec47a; border-color: #4ec47a; }
-    .tag-venta      { color: #e87040; border-color: #e87040; }
-    .tag-mortandad  { color: #c04040; border-color: #c04040; }
 
-    /* ── EMPTY STATE ── */
-    .empty {
-      text-align: center; padding: 50px 20px; color: var(--text-dim);
-    }
-    .empty .icon { font-size: 44px; margin-bottom: 14px; }
-    .empty p { font-size: 13px; letter-spacing: 1px; line-height: 1.8; }
+    .tag { display: inline-block; font-size: 9px; padding: 2px 8px; border: 1px solid; margin-top: 7px; letter-spacing: 2px; font-weight: 700; }
+    .tag-pesaje    { color: #b87a00; border-color: #b87a00; background: #fff8e6; }
+    .tag-servicio  { color: #1e5fa0; border-color: #1e5fa0; background: #e8f0fa; }
+    .tag-prenez    { color: #6b44a0; border-color: #6b44a0; background: #f2eefb; }
+    .tag-sanitacion{ color: #2a7d50; border-color: #2a7d50; background: #e8f5ee; }
+
+    .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+    .empty .icon { font-size: 48px; margin-bottom: 14px; }
+    .empty p { font-size: 12px; letter-spacing: 2px; line-height: 2; }
 
     /* ── BUTTONS ── */
     .btn {
       display: block; width: 100%; padding: 15px 12px;
-      font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700;
-      letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer;
-      transition: filter 0.15s;
+      font-family: "Courier New", monospace; font-size: 13px;
+      font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      border: none; cursor: pointer; transition: filter 0.15s;
     }
-    .btn:active { filter: brightness(0.8); }
+    .btn:active { filter: brightness(0.88); }
     .btn + .btn { margin-top: 10px; }
-    .btn-primary  { background: var(--accent); color: #000; }
+    .btn-primary { background: var(--accent); color: #000; }
     .btn-outline  { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
     .btn-success  { background: var(--green); color: #fff; }
-    .btn-danger   { background: var(--red); color: #fff; }
-    .btn-sm       { width: auto; display: inline-block; padding: 7px 12px; font-size: 11px; }
+    .btn-danger   { background: var(--red);   color: #fff; }
+    .btn-sm { width: auto; display: inline-block; padding: 7px 12px; font-size: 11px; }
 
     /* ── FORMS ── */
     .form-group { margin-bottom: 14px; }
-    label {
-      display: block; font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
-      text-transform: uppercase; margin-bottom: 5px;
-    }
+    label { display: block; font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
     input, select {
       width: 100%; background: var(--surface2); border: 1px solid var(--border);
       color: var(--text); padding: 13px 12px;
-      font-family: 'Courier New', monospace; font-size: 15px;
+      font-family: "Courier New", monospace; font-size: 15px;
       outline: none; appearance: none; border-radius: 0;
     }
-    input:focus, select:focus { border-color: var(--accent); }
-    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23777' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
-    select option { background: #222; }
+    input:focus, select:focus { border-color: var(--accent); background: #fff; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238a8680' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+    }
+    select option { background: #fff; }
     .row { display: flex; gap: 10px; }
     .row .form-group { flex: 1; min-width: 0; }
 
-    /* ── SESSION HEADER BOX ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── SESSION DETAIL ── */
     .session-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-top: 3px solid var(--accent); padding: 13px 15px; margin-bottom: 14px;
+      background: var(--surface);
+      border-top: 3px solid var(--accent);
+      padding: 13px 15px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .session-box h2 {
-      font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    }
+    .session-box h2 { font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
     .session-box .meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
     .count-chip {
       display: inline-block; background: var(--accent); color: #000;
       font-size: 11px; font-weight: 700; padding: 2px 10px; margin-top: 8px; letter-spacing: 2px;
     }
 
-    /* ── TREATMENT INFO BOX ── */
-    .treat-box {
-      background: var(--surface2); border: 1px solid var(--accent-dim);
-      padding: 12px 14px; margin-bottom: 14px;
-    }
+    .treat-box { background: var(--accent-lt); border: 1px solid #f0d888; padding: 12px 14px; margin-bottom: 14px; }
     .treat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 2px; }
-    .treat-item { }
-    .treat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
-    .treat-value { font-size: 13px; color: var(--text); margin-top: 1px; }
+    .treat-label { font-size: 9px; letter-spacing: 2px; color: var(--accent-dk); text-transform: uppercase; }
+    .treat-value { font-size: 13px; color: var(--text); margin-top: 1px; font-weight: 700; }
 
     /* ── INPUT AREA ── */
     .input-area {
-      background: var(--surface); border: 2px solid var(--accent);
-      padding: 14px; margin-bottom: 14px;
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      padding: 14px;
+      margin-bottom: 14px;
     }
-    .input-area-title {
-      font-size: 10px; letter-spacing: 3px; color: var(--accent);
-      text-transform: uppercase; margin-bottom: 12px; font-weight: 700;
-    }
+    .input-area-title { font-size: 10px; letter-spacing: 3px; color: var(--accent-dk); text-transform: uppercase; margin-bottom: 12px; font-weight: 700; }
 
     /* ── RECORD ITEMS ── */
     .record-item {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 11px 13px; margin-bottom: 7px;
-      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 11px 13px;
+      margin-bottom: 7px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
     }
-    .record-id { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-    .record-data { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .record-id      { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+    .record-data    { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
     .record-comment { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
-    .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
-    .record-time { font-size: 11px; color: var(--text-dim); }
+    .record-right   { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .record-time    { font-size: 11px; color: var(--text-dim); }
     .del-btn {
       background: none; border: 1px solid var(--red); color: var(--red);
-      padding: 3px 8px; font-family: 'Courier New', monospace; font-size: 11px; cursor: pointer;
+      padding: 3px 8px; font-family: "Courier New", monospace; font-size: 11px; cursor: pointer;
     }
     .del-btn:active { background: var(--red); color: #fff; }
 
     /* ── PREÑEZ SUMMARY ── */
     .prenez-summary {
-      background: var(--surface); border: 1px solid var(--border);
-      border-left: 4px solid var(--purple); padding: 13px 15px; margin-bottom: 14px;
+      background: var(--surface);
+      border-left: 4px solid var(--purple);
+      padding: 13px 15px;
+      margin-bottom: 14px;
     }
-    .prenez-summary-title {
-      font-size: 9px; letter-spacing: 3px; color: var(--purple);
-      text-transform: uppercase; font-weight: 700; margin-bottom: 12px;
-    }
+    .prenez-summary-title { font-size: 9px; letter-spacing: 3px; color: var(--purple); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
     .prenez-totals { display: flex; gap: 0; margin-bottom: 14px; }
-    .prenez-total-cell {
-      flex: 1; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
-    }
+    .prenez-total-cell { flex: 1; padding: 6px 10px 6px 0; border-right: 1px solid var(--border); }
     .prenez-total-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
     .prenez-total-cell:first-child { padding-left: 0; }
-    .prenez-total-label { font-size: 10px; letter-spacing: 2px; color: #aaa; text-transform: uppercase; font-weight: 600; }
-    .prenez-total-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 3px; }
-    .prenez-total-pct { font-size: 15px; font-weight: 700; color: #ddd; margin-top: 3px; }
-
-    /* Stacked bar */
-    .prenez-bar-wrap { margin-bottom: 14px; }
-    .prenez-bar {
-      height: 14px; display: flex; overflow: hidden; background: var(--border); margin-bottom: 8px;
-    }
+    .prenez-total-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .prenez-total-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 2px; }
+    .prenez-total-pct   { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+    .prenez-bar-wrap { margin-bottom: 12px; }
+    .prenez-bar { height: 10px; display: flex; overflow: hidden; background: var(--border); margin-bottom: 6px; }
     .bar-seg { height: 100%; transition: width 0.4s; }
-    .bar-pg  { background: #2e8b57; }
-    .bar-pm  { background: #5ab878; }
-    .bar-pc  { background: #98dba8; }
-    .bar-pcut{ background: #c8f0d2; }
-    .bar-vb  { background: #888; }
-    .bar-vd  { background: #444; }
-
-    /* Category rows */
-    .prenez-cats { display: flex; flex-direction: column; gap: 7px; }
-    .cat-row { display: flex; align-items: center; gap: 10px; }
-    .cat-dot { width: 10px; height: 10px; flex-shrink: 0; }
-    .cat-name { font-size: 13px; color: #ccc; flex: 1; font-weight: 600; }
-    .cat-count { font-size: 15px; font-weight: 700; color: var(--text); min-width: 28px; text-align: right; }
-    .cat-pct { font-size: 14px; font-weight: 700; color: #ddd; min-width: 50px; text-align: right; }
-
-    /* ── DIAGNÓSTICO BUTTONS ── */
-    .prenez-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px;
-    }
-    .prenez-btn {
-      padding: 18px 8px; border: 2px solid var(--border);
-      background: var(--surface2); color: #bbb;
-      font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-      text-align: center; line-height: 1.3; transition: all 0.15s;
-    }
-    .prenez-btn:active { filter: brightness(1.2); }
-    .prenez-btn.selected-pg   { background: #1a5c38; border-color: #2e8b57; color: #fff; }
-    .prenez-btn.selected-pm   { background: #1e6b3a; border-color: #5ab878; color: #fff; }
-    .prenez-btn.selected-pc   { background: #237042; border-color: #98dba8; color: #fff; }
-    .prenez-btn.selected-pcut { background: #2a7a50; border-color: #c8f0d2; color: #fff; }
-    .prenez-btn.selected-vb   { background: #444; border-color: #888; color: #fff; }
-    .prenez-btn.selected-vd   { background: #2a2a2a; border-color: #555; color: #fff; }
+    .bar-pg   { background: #2a7d50; }
+    .bar-pm   { background: #4caf80; }
+    .bar-pc   { background: #90d4aa; }
+    .bar-pcut { background: #c8f0d2; }
+    .bar-vb   { background: #aaa; }
+    .bar-vd   { background: #e05050; }
+    .prenez-cats { display: flex; flex-direction: column; gap: 5px; }
+    .cat-row  { display: flex; align-items: center; gap: 8px; }
+    .cat-dot  { width: 8px; height: 8px; flex-shrink: 0; }
+    .cat-name { font-size: 11px; color: var(--text-dim); flex: 1; }
+    .cat-count{ font-size: 13px; font-weight: 700; color: var(--text); min-width: 24px; text-align: right; }
+    .cat-pct  { font-size: 11px; color: var(--text-dim); min-width: 42px; text-align: right; }
 
     /* ── PESAJE SUMMARY ── */
     .pesaje-summary {
-      background: var(--surface); border: 1px solid var(--border);
-      border-left: 4px solid var(--green); padding: 13px 15px; margin-bottom: 14px;
+      background: var(--surface);
+      border-left: 4px solid var(--green);
+      padding: 13px 15px;
+      margin-bottom: 14px;
     }
-    .pesaje-summary-title {
-      font-size: 9px; letter-spacing: 3px; color: var(--green);
-      text-transform: uppercase; font-weight: 700; margin-bottom: 10px;
-    }
+    .pesaje-summary-title { font-size: 9px; letter-spacing: 3px; color: var(--green); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
     .pesaje-stats { display: flex; gap: 0; flex-wrap: wrap; }
-    .stat-cell {
-      flex: 1; min-width: 0; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
-    }
+    .stat-cell { flex: 1; min-width: 0; padding: 6px 10px 6px 0; border-right: 1px solid var(--border); }
     .stat-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
     .stat-cell:first-child { padding-left: 0; }
     .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
     .stat-value { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 2px; line-height: 1; }
-    .stat-unit { font-size: 11px; color: var(--text-dim); }
-
-    /* ── DIVIDER ── */
-    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .stat-unit  { font-size: 11px; color: var(--text-dim); }
 
     /* ── FAB ── */
     .fab {
-      position: fixed; bottom: 22px; right: 18px; width: 58px; height: 58px;
-      background: var(--accent); color: #000; border: none; font-size: 30px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(232,160,0,0.45); border-radius: 0;
-      font-family: 'Courier New', monospace; font-weight: 700;
+      position: fixed; bottom: 22px; right: 18px;
+      width: 58px; height: 58px;
+      background: var(--accent); color: #000;
+      border: none; font-size: 30px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(232,160,0,0.45);
+      font-family: "Courier New", monospace; font-weight: 700;
     }
-    .fab:active { filter: brightness(0.8); }
+    .fab:active { filter: brightness(0.85); }
 
     /* ── TOAST ── */
     .toast {
-      position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
-      background: var(--green); color: #fff; padding: 10px 20px;
-      font-family: 'Courier New', monospace; font-size: 13px; letter-spacing: 1px;
-      opacity: 0; pointer-events: none; z-index: 999; transition: opacity 0.25s;
-      white-space: nowrap;
+      position: fixed; bottom: 88px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--green); color: #fff;
+      padding: 10px 20px; font-family: "Courier New", monospace;
+      font-size: 13px; letter-spacing: 1px;
+      opacity: 0; pointer-events: none; z-index: 999;
+      transition: opacity 0.25s; white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     }
     .toast.error { background: var(--red); }
-    .toast.show { opacity: 1; }
+    .toast.show  { opacity: 1; }
+
+    /* ── OFFLINE BADGE ── */
+    #offlineBadge {
+      display: none; text-align: center;
+      background: #fff3cc; border-bottom: 1px solid #f0d888;
+      padding: 5px; font-size: 11px; letter-spacing: 1px; color: #7a5a00;
+    }
   </style>
 </head>
 <body>
+
+<div id="offlineBadge">⚡ MODO OFFLINE</div>
 
 <!-- HEADER -->
 <div class="header">
@@ -295,18 +282,14 @@
   <div id="headerAction"></div>
 </div>
 
-<!-- ════════════════════════════════════
-     PANTALLA: INICIO
-     ════════════════════════════════════ -->
+<!-- ════ PANTALLA: INICIO ════ -->
 <div id="screenHome" class="screen active">
   <p class="section-label">Sesiones de trabajo</p>
   <div id="sessionList"></div>
-  <button class="fab" onclick="goNewSession()" title="Nueva sesión">+</button>
+  <button class="fab" id="fabNew" title="Nueva sesión">+</button>
 </div>
 
-<!-- ════════════════════════════════════
-     PANTALLA: NUEVA SESIÓN
-     ════════════════════════════════════ -->
+<!-- ════ PANTALLA: NUEVA SESIÓN ════ -->
 <div id="screenNew" class="screen">
   <p class="section-label">Crear nueva sesión</p>
 
@@ -317,18 +300,15 @@
 
   <div class="form-group">
     <label>Tipo de tarea</label>
-    <select id="newType" onchange="onTypeChange()">
+    <select id="newType">
       <option value="">— Seleccionar —</option>
       <option value="pesaje">Pesaje</option>
       <option value="servicio">Servicio (Monta / IA)</option>
       <option value="prenez">Diagnóstico de Preñez</option>
       <option value="sanitacion">Sanitación / Vacunación</option>
-      <option value="venta">Venta / Auditoría</option>
-      <option value="mortandad">Mortandad</option>
     </select>
   </div>
 
-  <!-- Campos extra para sanitación -->
   <div id="sanFields" style="display:none">
     <hr>
     <p class="section-label">Datos del tratamiento</p>
@@ -354,439 +334,425 @@
     </div>
     <div class="form-group">
       <label>Lote / N° de frasco</label>
-      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off" inputmode="numeric">
+      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off">
     </div>
   </div>
 
   <hr>
-  <button class="btn btn-primary" onclick="createSession()">CREAR SESIÓN</button>
-  <button class="btn btn-outline" onclick="goHome()">CANCELAR</button>
+  <button class="btn btn-primary" id="btnCreate">CREAR SESIÓN</button>
+  <button class="btn btn-outline" id="btnCancelNew">CANCELAR</button>
 </div>
 
-<!-- ════════════════════════════════════
-     PANTALLA: DETALLE DE SESIÓN
-     ════════════════════════════════════ -->
+<!-- ════ PANTALLA: DETALLE DE SESIÓN ════ -->
 <div id="screenSession" class="screen">
   <div class="session-box" id="sessBox"></div>
   <div id="treatBox"></div>
 
-  <!-- Área de ingreso -->
   <div class="input-area">
     <div class="input-area-title" id="inputTitle">Registrar animal</div>
     <div id="inputFields"></div>
-    <button class="btn btn-primary" onclick="addRecord()">+ REGISTRAR ANIMAL</button>
+    <button class="btn btn-primary" id="btnRegister">+ REGISTRAR ANIMAL</button>
   </div>
 
-  <!-- Resumen pesaje (solo para sesiones de pesaje) -->
   <div id="pesajeSummary" style="display:none"></div>
+  <div id="prenezSummary" style="display:none"></div>
 
-  <!-- Lista de registros -->
   <p class="section-label" id="recLabel">REGISTROS</p>
   <div id="recList"></div>
 
   <hr>
-  <button class="btn btn-success" onclick="exportExcel()">↓ EXPORTAR EXCEL</button>
-  <button class="btn btn-danger" onclick="deleteSession()">✕ ELIMINAR SESIÓN</button>
+  <button class="btn btn-success" id="btnExport">↓ EXPORTAR EXCEL</button>
+  <button class="btn btn-danger"  id="btnDelete">✕ ELIMINAR SESIÓN</button>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- SheetJS para exportar Excel (se cachea offline) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-/* ═══════════════════════════════════════════════════════════
-   DATABASE — IndexedDB
-   ═══════════════════════════════════════════════════════════ */
-const DB_NAME = 'fieldtraz_v1';
-let db, currentSessId = null;
+// ═══════════════════════════════════════════
+//  SERVICE WORKER
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW error', e));
+}
+window.addEventListener('online',  () => { document.getElementById('offlineBadge').style.display = 'none'; });
+window.addEventListener('offline', () => { document.getElementById('offlineBadge').style.display = 'block'; });
+if (!navigator.onLine) document.getElementById('offlineBadge').style.display = 'block';
 
-function initDB() {
-  return new Promise((res, rej) => {
-    const r = indexedDB.open(DB_NAME, 1);
-    r.onupgradeneeded = e => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('sessions')) {
-        d.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true })
-         .createIndex('createdAt', 'createdAt');
-      }
-      if (!d.objectStoreNames.contains('records')) {
-        d.createObjectStore('records', { keyPath: 'id', autoIncrement: true })
-         .createIndex('sessionId', 'sessionId');
-      }
-    };
-    r.onsuccess = e => { db = e.target.result; res(); };
-    r.onerror = e => rej(e.target.error);
-  });
-}
+// ═══════════════════════════════════════════
+//  ESTADO Y PERSISTENCIA
+// ═══════════════════════════════════════════
+let sessions = [];
+let currentId = null;
 
-const tx = (store, mode = 'readonly') => db.transaction(store, mode).objectStore(store);
-
-function dbAdd(store, obj) {
-  return new Promise((res, rej) => {
-    const r = tx(store, 'readwrite').add(obj);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
+function loadDB() {
+  try { sessions = JSON.parse(localStorage.getItem('ft_sessions') || '[]'); }
+  catch(e) { sessions = []; }
 }
-function dbGet(store, id) {
-  return new Promise((res, rej) => {
-    const r = tx(store).get(id);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
+function saveDB() {
+  localStorage.setItem('ft_sessions', JSON.stringify(sessions));
 }
-function dbGetAll(store) {
-  return new Promise((res, rej) => {
-    const r = tx(store).getAll();
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
+function getSession(id) { return sessions.find(s => s.id === id); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function fmtDate(ts) {
+  return new Date(ts).toLocaleDateString('es-PY', { day:'2-digit', month:'2-digit', year:'numeric' });
 }
-function dbGetByIdx(store, idx, val) {
-  return new Promise((res, rej) => {
-    const r = tx(store).index(idx).getAll(val);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-function dbDel(store, id) {
-  return new Promise((res, rej) => {
-    const r = tx(store, 'readwrite').delete(id);
-    r.onsuccess = () => res();
-    r.onerror = () => rej(r.error);
-  });
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   NAVIGATION
-   ═══════════════════════════════════════════════════════════ */
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function toast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ═══════════════════════════════════════════
+//  NAVEGACIÓN DE PANTALLAS
+// ═══════════════════════════════════════════
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
 }
 
-function setHeaderAction(html) {
-  document.getElementById('headerAction').innerHTML = html;
-}
+// ═══════════════════════════════════════════
+//  PANTALLA: INICIO
+// ═══════════════════════════════════════════
+const TYPE_LABELS = {
+  pesaje:    'PESAJE',
+  servicio:  'SERVICIO',
+  prenez:    'PREÑEZ',
+  sanitacion:'SANIT.'
+};
 
-function goHome() {
-  setHeaderAction('');
+function renderHome() {
   showScreen('screenHome');
-  loadHome();
-}
+  document.getElementById('headerAction').innerHTML = '';
 
-function goNewSession() {
-  document.getElementById('newName').value = '';
-  document.getElementById('newType').value = '';
-  document.getElementById('sanFields').style.display = 'none';
-  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
-  showScreen('screenNew');
-}
-
-function goSession(id) {
-  currentSessId = id;
-  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
-  showScreen('screenSession');
-  loadSession(id);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   HOME
-   ═══════════════════════════════════════════════════════════ */
-async function loadHome() {
-  const sessions = await dbGetAll('sessions');
-  const allRecs = await dbGetAll('records');
-  const cntMap = {};
-  allRecs.forEach(r => { cntMap[r.sessionId] = (cntMap[r.sessionId] || 0) + 1; });
-
-  sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const TYPE_LABEL = { pesaje:'PESAJE', servicio:'SERVICIO', prenez:'PREÑEZ', sanitacion:'SANITACIÓN', venta:'VENTA/AUD.', mortandad:'MORTANDAD' };
-  const container = document.getElementById('sessionList');
-
+  const list = document.getElementById('sessionList');
   if (!sessions.length) {
-    container.innerHTML = `<div class="empty"><div class="icon">🐄</div><p>No hay sesiones.<br>Tocá <strong>+</strong> para crear una.</p></div>`;
+    list.innerHTML = `
+      <div class="empty">
+        <div class="icon">🐄</div>
+        <p>SIN SESIONES<br>TOCÁ + PARA COMENZAR</p>
+      </div>`;
     return;
   }
-
-  container.innerHTML = sessions.map(s => `
-    <div class="session-card" onclick="goSession(${s.id})">
+  list.innerHTML = [...sessions].reverse().map(s => `
+    <div class="session-card" onclick="openSession('${s.id}')">
       <div class="session-name">${esc(s.name)}</div>
-      <div class="session-meta">${fmtDate(s.date)} &nbsp;·&nbsp; ${cntMap[s.id] || 0} animales</div>
-      <span class="tag tag-${s.type}">${TYPE_LABEL[s.type]}</span>
+      <div class="session-meta">${fmtDate(s.ts)} &nbsp;·&nbsp; ${s.records.length} ${s.records.length === 1 ? 'animal' : 'animales'}</div>
+      <span class="tag tag-${s.type}">${TYPE_LABELS[s.type] || s.type.toUpperCase()}</span>
     </div>
   `).join('');
 }
 
-/* ═══════════════════════════════════════════════════════════
-   NEW SESSION
-   ═══════════════════════════════════════════════════════════ */
-function onTypeChange() {
-  document.getElementById('sanFields').style.display =
-    document.getElementById('newType').value === 'sanitacion' ? 'block' : 'none';
+// ═══════════════════════════════════════════
+//  PANTALLA: NUEVA SESIÓN
+// ═══════════════════════════════════════════
+function renderNew() {
+  showScreen('screenNew');
+  document.getElementById('headerAction').innerHTML = '';
+  document.getElementById('newName').value    = '';
+  document.getElementById('newType').value    = '';
+  document.getElementById('sanProducto').value = '';
+  document.getElementById('sanDosis').value   = '';
+  document.getElementById('sanVia').value     = 'SC';
+  document.getElementById('sanLote').value    = '';
+  document.getElementById('sanFields').style.display = 'none';
 }
 
-async function createSession() {
+document.getElementById('newType').addEventListener('change', function() {
+  document.getElementById('sanFields').style.display = this.value === 'sanitacion' ? '' : 'none';
+});
+
+document.getElementById('btnCreate').addEventListener('click', () => {
   const name = document.getElementById('newName').value.trim();
   const type = document.getElementById('newType').value;
-  if (!name) { toast('Ingresá un nombre de sesión', true); return; }
+  if (!name) { toast('Ingresá un nombre para la sesión', true); return; }
   if (!type) { toast('Seleccioná el tipo de tarea', true); return; }
 
-  const sess = { name, type, date: todayDate(), createdAt: new Date().toISOString(), meta: {} };
-
+  const session = {
+    id: genId(), name, type,
+    ts: Date.now(),
+    records: []
+  };
   if (type === 'sanitacion') {
-    const producto = document.getElementById('sanProducto').value.trim();
-    if (!producto) { toast('Ingresá el producto', true); return; }
-    sess.meta = {
-      producto,
-      dosis: document.getElementById('sanDosis').value || '',
-      via: document.getElementById('sanVia').value,
-      lote: document.getElementById('sanLote').value.trim()
-    };
+    session.sanProducto = document.getElementById('sanProducto').value.trim();
+    session.sanDosis    = document.getElementById('sanDosis').value;
+    session.sanVia      = document.getElementById('sanVia').value;
+    session.sanLote     = document.getElementById('sanLote').value.trim();
   }
+  sessions.push(session);
+  saveDB();
+  openSession(session.id);
+});
 
-  const id = await dbAdd('sessions', sess);
-  goSession(id);
-}
+document.getElementById('btnCancelNew').addEventListener('click', renderHome);
+document.getElementById('fabNew').addEventListener('click', renderNew);
 
-/* ═══════════════════════════════════════════════════════════
-   SESSION DETAIL
-   ═══════════════════════════════════════════════════════════ */
-const TYPE_FULLNAME = {
-  pesaje: 'PESAJE',
-  servicio: 'SERVICIO',
-  prenez: 'DIAGNÓSTICO DE PREÑEZ',
-  sanitacion: 'SANITACIÓN / VACUNACIÓN',
-  venta: 'VENTA / AUDITORÍA',
-  mortandad: 'MORTANDAD'
+// ═══════════════════════════════════════════
+//  PANTALLA: DETALLE DE SESIÓN
+// ═══════════════════════════════════════════
+
+// Definición de campos por tipo
+const FIELD_DEFS = {
+  pesaje: [
+    { id:'fAnimal', label:'ID Animal', type:'text', ph:'Caravana o chip', req:true },
+    { id:'fPeso',   label:'Peso (kg)', type:'number', ph:'0.0', step:'0.1', min:'0', req:true },
+    { id:'fComm',   label:'Comentario', type:'text', ph:'Opcional', req:false }
+  ],
+  servicio: [
+    { id:'fAnimal',    label:'ID Animal', type:'text', ph:'Caravana o chip', req:true },
+    { id:'fTipoServ',  label:'Tipo de servicio', type:'select',
+      opts:['Monta Natural','IA — Inseminación Artificial'], req:true },
+    { id:'fToro',      label:'Toro / Pajuela', type:'text', ph:'Identificación', req:false },
+    { id:'fComm',      label:'Comentario', type:'text', ph:'Opcional', req:false }
+  ],
+  prenez: [
+    { id:'fAnimal',  label:'ID Animal', type:'text', ph:'Caravana o chip', req:true },
+    { id:'fPrenez',  label:'Resultado', type:'select',
+      opts:['PG — Preñada Grande','PM — Preñada Mediana','PC — Preñada Chica','PCut — Preñada 4° mes','VB — Vacía Buena','VD — Vacía con Descarte'],
+      req:true },
+    { id:'fComm',    label:'Comentario', type:'text', ph:'Opcional', req:false }
+  ],
+  sanitacion: [
+    { id:'fAnimal', label:'ID Animal', type:'text', ph:'Caravana o chip', req:true },
+    { id:'fComm',   label:'Comentario', type:'text', ph:'Opcional', req:false }
+  ]
 };
 
-async function loadSession(id) {
-  const sess = await dbGet('sessions', id);
-  const recs = await dbGetByIdx('records', 'sessionId', id);
+const PRENEZ_CATS = [
+  { key:'PG',   label:'Preñada Grande',     color:'#2a7d50', bclass:'bar-pg'   },
+  { key:'PM',   label:'Preñada Mediana',    color:'#4caf80', bclass:'bar-pm'   },
+  { key:'PC',   label:'Preñada Chica',      color:'#90d4aa', bclass:'bar-pc'   },
+  { key:'PCut', label:'Preñada 4° mes',     color:'#c8f0d2', bclass:'bar-pcut' },
+  { key:'VB',   label:'Vacía Buena',        color:'#aaa',    bclass:'bar-vb'   },
+  { key:'VD',   label:'Vacía con Descarte', color:'#e05050', bclass:'bar-vd'   }
+];
 
-  // Header box
-  const countLabel = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
+function openSession(id) {
+  currentId = id;
+  const s = getSession(id);
+  if (!s) { renderHome(); return; }
+
+  showScreen('screenSession');
+
+  // Header back button
+  document.getElementById('headerAction').innerHTML =
+    '<button class="back-btn" id="btnBack">← VOLVER</button>';
+  document.getElementById('btnBack').addEventListener('click', renderHome);
+
+  renderSessionDetail();
+}
+
+function renderSessionDetail() {
+  const s = getSession(currentId);
+  if (!s) return;
+
+  // Caja de info
   document.getElementById('sessBox').innerHTML = `
-    <h2>${esc(sess.name)}</h2>
-    <div class="meta">${fmtDate(sess.date)} &nbsp;·&nbsp; ${TYPE_FULLNAME[sess.type]}</div>
-    <span class="count-chip">${recs.length} ${countLabel}</span>
+    <h2>${esc(s.name)}</h2>
+    <div class="meta">${fmtDate(s.ts)} &nbsp;·&nbsp; <span class="tag tag-${s.type}" style="margin-top:0">${TYPE_LABELS[s.type]}</span></div>
+    <span class="count-chip">${s.records.length} ${s.records.length === 1 ? 'ANIMAL' : 'ANIMALES'}</span>
   `;
 
-  // Treat box (sanitacion only)
+  // Caja de tratamiento (sanitación)
   const tb = document.getElementById('treatBox');
-  if (sess.type === 'sanitacion' && sess.meta.producto) {
+  if (s.type === 'sanitacion' && s.sanProducto) {
+    tb.style.display = '';
     tb.innerHTML = `
       <div class="treat-box">
-        <div class="treat-label">Producto</div>
-        <div class="treat-value">${esc(sess.meta.producto)}</div>
-        <div class="treat-row" style="margin-top:6px">
-          <div class="treat-item"><div class="treat-label">Dosis</div><div class="treat-value">${esc(sess.meta.dosis)} ml</div></div>
-          <div class="treat-item"><div class="treat-label">Vía</div><div class="treat-value">${esc(sess.meta.via)}</div></div>
-          <div class="treat-item"><div class="treat-label">Lote</div><div class="treat-value">${esc(sess.meta.lote || '—')}</div></div>
+        <div class="treat-row">
+          <div class="treat-item"><div class="treat-label">Producto</div><div class="treat-value">${esc(s.sanProducto)}</div></div>
+          <div class="treat-item"><div class="treat-label">Dosis</div><div class="treat-value">${s.sanDosis || '—'} ml</div></div>
+          <div class="treat-item"><div class="treat-label">Vía</div><div class="treat-value">${s.sanVia || '—'}</div></div>
+          ${s.sanLote ? `<div class="treat-item"><div class="treat-label">Lote</div><div class="treat-value">${esc(s.sanLote)}</div></div>` : ''}
         </div>
       </div>`;
-    tb.style.display = 'block';
   } else {
+    tb.style.display = 'none';
     tb.innerHTML = '';
   }
 
-  buildInputArea(sess.type);
-  renderRecords(recs, sess);
+  // Campos de entrada
+  renderInputFields(s.type);
+
+  // Resúmenes estadísticos
+  renderPesajeSummary(s);
+  renderPrenezSummary(s);
+
+  // Lista de registros
+  renderRecords(s);
 }
 
-/* ── Prenez button selector ── */
-function selectPrenez(btn) {
-  // Deselect all
-  document.querySelectorAll('.prenez-btn').forEach(b => {
-    b.className = 'prenez-btn';
-  });
-  // Select this one
-  btn.classList.add(btn.dataset.cls);
-  // Store value in hidden input
-  document.getElementById('fResultado').value = btn.dataset.val;
-}
-
-/* ── Preneñez button selector ── */
-function selectPrenez(btn) {
-  document.querySelectorAll('.prenez-btn').forEach(b => b.className = 'prenez-btn');
-  btn.classList.add(btn.dataset.cls);
-  document.getElementById('fResultado').value = btn.dataset.val;
-}
-
-/* ── Input area per task type ── */
-function buildInputArea(type) {
-  const TITLES = {
-    pesaje: 'Registrar pesaje',
-    servicio: 'Registrar servicio',
-    prenez: 'Registrar diagnóstico',
-    sanitacion: 'Confirmar animal tratado',
-    venta: 'Registrar animal',
-    mortandad: 'Registrar baja'
-  };
-  document.getElementById('inputTitle').textContent = TITLES[type];
-
-  let html = `
-    <div class="form-group">
-      <label>ID Animal — chip RFID o caravana</label>
-      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric">
-    </div>`;
-
-  if (type === 'pesaje') {
-    html += `
-      <div class="form-group">
-        <label>Peso (kg)</label>
-        <input id="fPeso" type="number" placeholder="0.0" step="0.1" min="0" inputmode="decimal">
-      </div>`;
-  } else if (type === 'servicio') {
-    html += `
-      <div class="form-group">
-        <label>Tipo de servicio</label>
-        <select id="fTipoSrv">
-          <option value="MN">Monta Natural</option>
-          <option value="IA">Inseminación Artificial</option>
-          <option value="TE">Transferencia de Embrión</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Toro / Semental / Donante</label>
-        <input id="fToro" type="text" placeholder="ID o nombre del macho" autocomplete="off" inputmode="numeric">
-      </div>
-      <div class="form-group">
-        <label>Observación (opcional)</label>
-        <input id="fObs" type="text" placeholder="" autocomplete="off">
-      </div>`;
-  } else if (type === 'prenez') {
-    html += `
-      <div class="form-group">
-        <label>Resultado — seleccioná una opción</label>
-        <div class="prenez-grid">
-          <button type="button" class="prenez-btn" data-val="Preñada Grande"  data-cls="selected-pg"   onclick="selectPrenez(this)">Preñada<br>Grande</button>
-          <button type="button" class="prenez-btn" data-val="Preñada Mediana" data-cls="selected-pm"   onclick="selectPrenez(this)">Preñada<br>Mediana</button>
-          <button type="button" class="prenez-btn" data-val="Preñada Chica"   data-cls="selected-pc"   onclick="selectPrenez(this)">Preñada<br>Chica</button>
-          <button type="button" class="prenez-btn" data-val="Preñada CUT"     data-cls="selected-pcut" onclick="selectPrenez(this)">Preñada<br>CUT</button>
-          <button type="button" class="prenez-btn" data-val="Vacía Buena"     data-cls="selected-vb"   onclick="selectPrenez(this)">Vacía<br>Buena</button>
-          <button type="button" class="prenez-btn" data-val="Vacía Descarte"  data-cls="selected-vd"   onclick="selectPrenez(this)">Vacía<br>Descarte</button>
-        </div>
-        <input type="hidden" id="fResultado" value="">
-      </div>`;
-  } else if (type === 'mortandad') {
-    html += `
-      <div class="form-group">
-        <label>Causa</label>
-        <select id="fCausa">
-          <option value="Enfermedad">Enfermedad</option>
-          <option value="Accidente">Accidente</option>
-          <option value="Depredador">Depredador</option>
-          <option value="Problema de Parto">Problema de Parto</option>
-          <option value="Causa Desconocida">Causa Desconocida</option>
-          <option value="Otra">Otra</option>
+function renderInputFields(type) {
+  const fields = FIELD_DEFS[type] || [];
+  document.getElementById('inputFields').innerHTML = fields.map(f => {
+    if (f.type === 'select') {
+      return `<div class="form-group">
+        <label>${f.label}</label>
+        <select id="${f.id}">
+          <option value="">— Seleccionar —</option>
+          ${f.opts.map(o => `<option value="${o.split('—')[0].trim()}">${o}</option>`).join('')}
         </select>
       </div>`;
-  }
-  // sanitacion y venta: solo ID
-
-  // Comentario — campo universal opcional
-  html += `
-    <div class="form-group" style="margin-top:4px">
-      <label>Comentario (opcional)</label>
-      <input id="fComentario" type="text" placeholder="Observación libre..." autocomplete="off">
+    }
+    return `<div class="form-group">
+      <label>${f.label}</label>
+      <input id="${f.id}" type="${f.type}" placeholder="${f.ph || ''}"
+        ${f.step ? `step="${f.step}"` : ''} ${f.min !== undefined ? `min="${f.min}"` : ''}
+        autocomplete="off">
     </div>`;
-
-  document.getElementById('inputFields').innerHTML = html;
-  setTimeout(() => { const f = document.getElementById('fAnimalId'); if (f) f.focus(); }, 80);
-}
-
-/* ── Add record ── */
-async function addRecord() {
-  const sess = await dbGet('sessions', currentSessId);
-  const animalId = document.getElementById('fAnimalId').value.trim();
-  if (!animalId) { toast('Ingresá el ID del animal', true); return; }
-
-  const rec = { sessionId: currentSessId, animalId, ts: new Date().toISOString(), data: {} };
-
-  if (sess.type === 'pesaje') {
-    const peso = document.getElementById('fPeso').value;
-    if (!peso) { toast('Ingresá el peso', true); return; }
-    rec.data = { peso: parseFloat(peso) };
-  } else if (sess.type === 'servicio') {
-    rec.data = {
-      tipo: document.getElementById('fTipoSrv').value,
-      toro: document.getElementById('fToro').value.trim(),
-      obs: document.getElementById('fObs').value.trim()
-    };
-  } else if (sess.type === 'prenez') {
-    const resultado = document.getElementById('fResultado').value;
-    if (!resultado) { toast('Seleccioná un resultado', true); return; }
-    rec.data = { resultado };
-  } else if (sess.type === 'mortandad') {
-    rec.data = {
-      causa: document.getElementById('fCausa').value
-    };
-  }
-  // venta y sanitacion: solo ID
-
-  // Comentario universal
-  const comentario = document.getElementById('fComentario');
-  if (comentario) rec.data.comentario = comentario.value.trim();
-
-  await dbAdd('records', rec);
-  toast('✓ Animal registrado');
-
-  document.getElementById('fAnimalId').value = '';
-  if (sess.type === 'pesaje') document.getElementById('fPeso').value = '';
-  if (sess.type === 'prenez') {
-    document.querySelectorAll('.prenez-btn').forEach(b => b.className = 'prenez-btn');
-    document.getElementById('fResultado').value = '';
-  }
-  if (comentario) comentario.value = '';
-  document.getElementById('fAnimalId').focus();
-
-  await loadSession(currentSessId);
-}
-
-/* ── Preñez summary ── */
-function renderPrenezSummary(recs) {
-  const box = document.getElementById('pesajeSummary'); // reuse same container
-  if (!recs.length) { box.style.display = 'none'; return; }
-
-  const CATS = [
-    { key: 'Preñada Grande',  label: 'Preñada Grande',  cls: 'bar-pg',   dot: '#2e8b57' },
-    { key: 'Preñada Mediana', label: 'Preñada Mediana', cls: 'bar-pm',   dot: '#5ab878' },
-    { key: 'Preñada Chica',   label: 'Preñada Chica',   cls: 'bar-pc',   dot: '#98dba8' },
-    { key: 'Preñada CUT',     label: 'Preñada CUT',     cls: 'bar-pcut', dot: '#c8f0d2' },
-    { key: 'Vacía Buena',     label: 'Vacía Buena',     cls: 'bar-vb',   dot: '#888' },
-    { key: 'Vacía Descarte',  label: 'Vacía Descarte',  cls: 'bar-vd',   dot: '#444' },
-  ];
-
-  const total = recs.length;
-  const counts = {};
-  CATS.forEach(c => counts[c.key] = 0);
-  recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
-
-  const totalPrenadas = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT']
-    .reduce((s, k) => s + counts[k], 0);
-  const totalVacias = ['Vacía Buena','Vacía Descarte']
-    .reduce((s, k) => s + counts[k], 0);
-
-  const pct = n => total > 0 ? ((n / total) * 100).toFixed(1) + '%' : '—';
-
-  const barSegs = CATS.map(c => {
-    const w = total > 0 ? ((counts[c.key] / total) * 100).toFixed(2) : 0;
-    return `<div class="bar-seg ${c.cls}" style="width:${w}%"></div>`;
   }).join('');
+}
 
-  const catRows = CATS.map(c => `
+document.getElementById('btnRegister').addEventListener('click', () => {
+  const s = getSession(currentId);
+  if (!s) return;
+  const fields = FIELD_DEFS[s.type] || [];
+
+  // Validar campos requeridos
+  for (const f of fields) {
+    const el = document.getElementById(f.id);
+    if (!el) continue;
+    if (f.req && !el.value.trim()) {
+      toast(`Completá el campo: ${f.label}`, true);
+      el.focus();
+      return;
+    }
+  }
+
+  // Construir registro
+  const rec = { id: genId(), ts: Date.now() };
+  rec.animal = document.getElementById('fAnimal')?.value.trim() || '';
+
+  if (s.type === 'pesaje') {
+    rec.peso = parseFloat(document.getElementById('fPeso').value);
+    rec.comm = document.getElementById('fComm')?.value.trim() || '';
+  } else if (s.type === 'servicio') {
+    rec.tipoServ = document.getElementById('fTipoServ')?.value || '';
+    rec.toro     = document.getElementById('fToro')?.value.trim() || '';
+    rec.comm     = document.getElementById('fComm')?.value.trim() || '';
+  } else if (s.type === 'prenez') {
+    rec.prenez = document.getElementById('fPrenez')?.value || '';
+    rec.comm   = document.getElementById('fComm')?.value.trim() || '';
+  } else if (s.type === 'sanitacion') {
+    rec.comm = document.getElementById('fComm')?.value.trim() || '';
+  }
+
+  s.records.push(rec);
+  saveDB();
+
+  // Limpiar campos (excepto selects de tipo fijo)
+  fields.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) el.value = '';
+  });
+  document.getElementById('fAnimal')?.focus();
+
+  toast(`✓ ${rec.animal} registrado`);
+  renderSessionDetail();
+});
+
+function renderRecords(s) {
+  const list = document.getElementById('recList');
+  if (!s.records.length) {
+    list.innerHTML = '<div class="empty" style="padding:30px 0"><p>SIN REGISTROS AÚN</p></div>';
+    return;
+  }
+  list.innerHTML = [...s.records].reverse().map(r => {
+    let dataHtml = '';
+    if (s.type === 'pesaje')
+      dataHtml = `<div class="record-data">${r.peso?.toFixed(1)} kg</div>`;
+    else if (s.type === 'servicio')
+      dataHtml = `<div class="record-data">${r.tipoServ}${r.toro ? ' · ' + esc(r.toro) : ''}</div>`;
+    else if (s.type === 'prenez')
+      dataHtml = `<div class="record-data">${r.prenez}</div>`;
+    return `
+      <div class="record-item">
+        <div>
+          <div class="record-id">${esc(r.animal)}</div>
+          ${dataHtml}
+          ${r.comm ? `<div class="record-comment">${esc(r.comm)}</div>` : ''}
+        </div>
+        <div class="record-right">
+          <div class="record-time">${fmtTime(r.ts)}</div>
+          <button class="del-btn" onclick="deleteRecord('${r.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function deleteRecord(rid) {
+  const s = getSession(currentId);
+  if (!s) return;
+  if (!confirm('¿Eliminar este registro?')) return;
+  s.records = s.records.filter(r => r.id !== rid);
+  saveDB();
+  renderSessionDetail();
+  toast('Registro eliminado');
+}
+
+// ── RESUMEN PESAJE ──
+function renderPesajeSummary(s) {
+  const box = document.getElementById('pesajeSummary');
+  if (s.type !== 'pesaje' || !s.records.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const pesos = s.records.map(r => r.peso).filter(p => !isNaN(p));
+  if (!pesos.length) { box.style.display = 'none'; return; }
+  const sum = pesos.reduce((a,b) => a+b, 0);
+  const avg = sum / pesos.length;
+  const max = Math.max(...pesos);
+  const min = Math.min(...pesos);
+  box.innerHTML = `
+    <div class="pesaje-summary">
+      <div class="pesaje-summary-title">Estadísticas de Pesaje</div>
+      <div class="pesaje-stats">
+        <div class="stat-cell"><div class="stat-label">Promedio</div><div class="stat-value">${avg.toFixed(1)}<span class="stat-unit"> kg</span></div></div>
+        <div class="stat-cell"><div class="stat-label">Máximo</div><div class="stat-value">${max.toFixed(1)}<span class="stat-unit"> kg</span></div></div>
+        <div class="stat-cell"><div class="stat-label">Mínimo</div><div class="stat-value">${min.toFixed(1)}<span class="stat-unit"> kg</span></div></div>
+        <div class="stat-cell"><div class="stat-label">Total</div><div class="stat-value">${pesos.length}<span class="stat-unit"> cab</span></div></div>
+      </div>
+    </div>`;
+}
+
+// ── RESUMEN PREÑEZ ──
+function renderPrenezSummary(s) {
+  const box = document.getElementById('prenezSummary');
+  if (s.type !== 'prenez' || !s.records.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const total = s.records.length;
+  const counts = {};
+  PRENEZ_CATS.forEach(c => counts[c.key] = 0);
+  s.records.forEach(r => { if (counts[r.prenez] !== undefined) counts[r.prenez]++; });
+  const prenadas = ['PG','PM','PC','PCut'].reduce((a,k) => a + counts[k], 0);
+  const vacias   = counts['VB'] + counts['VD'];
+  const pct = n => total ? Math.round(n/total*100) : 0;
+
+  const barSegs = PRENEZ_CATS.map(c =>
+    counts[c.key] ? `<div class="bar-seg ${c.bclass}" style="width:${pct(counts[c.key])}%"></div>` : ''
+  ).join('');
+
+  const catRows = PRENEZ_CATS.map(c => `
     <div class="cat-row">
-      <div class="cat-dot" style="background:${c.dot}"></div>
+      <div class="cat-dot" style="background:${c.color}"></div>
       <div class="cat-name">${c.label}</div>
       <div class="cat-count">${counts[c.key]}</div>
-      <div class="cat-pct">${pct(counts[c.key])}</div>
+      <div class="cat-pct">${pct(counts[c.key])}%</div>
     </div>`).join('');
 
   box.innerHTML = `
     <div class="prenez-summary">
-      <div class="prenez-summary-title">▸ Resumen de diagnóstico</div>
+      <div class="prenez-summary-title">Diagnóstico de Preñez</div>
       <div class="prenez-totals">
         <div class="prenez-total-cell">
           <div class="prenez-total-label">Total</div>
@@ -794,13 +760,13 @@ function renderPrenezSummary(recs) {
         </div>
         <div class="prenez-total-cell">
           <div class="prenez-total-label">Preñadas</div>
-          <div class="prenez-total-value" style="color:#5ab878">${totalPrenadas}</div>
-          <div class="prenez-total-pct">${pct(totalPrenadas)}</div>
+          <div class="prenez-total-value" style="color:var(--green)">${prenadas}</div>
+          <div class="prenez-total-pct">${pct(prenadas)}%</div>
         </div>
         <div class="prenez-total-cell">
           <div class="prenez-total-label">Vacías</div>
-          <div class="prenez-total-value" style="color:#888">${totalVacias}</div>
-          <div class="prenez-total-pct">${pct(totalVacias)}</div>
+          <div class="prenez-total-value" style="color:var(--red)">${vacias}</div>
+          <div class="prenez-total-pct">${pct(vacias)}%</div>
         </div>
       </div>
       <div class="prenez-bar-wrap">
@@ -808,386 +774,77 @@ function renderPrenezSummary(recs) {
       </div>
       <div class="prenez-cats">${catRows}</div>
     </div>`;
-  box.style.display = 'block';
 }
 
-/* ── Pesaje summary ── */
-function renderPesajeSummary(recs) {
-  const box = document.getElementById('pesajeSummary');
-  if (!recs.length) { box.style.display = 'none'; return; }
+// ═══════════════════════════════════════════
+//  ELIMINAR SESIÓN
+// ═══════════════════════════════════════════
+document.getElementById('btnDelete').addEventListener('click', () => {
+  const s = getSession(currentId);
+  if (!s) return;
+  if (!confirm(`¿Eliminar la sesión "${s.name}"? Esta acción no se puede deshacer.`)) return;
+  sessions = sessions.filter(x => x.id !== currentId);
+  saveDB();
+  toast('Sesión eliminada');
+  renderHome();
+});
 
-  const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
-  if (!pesos.length) { box.style.display = 'none'; return; }
+// ═══════════════════════════════════════════
+//  EXPORTAR EXCEL
+// ═══════════════════════════════════════════
+document.getElementById('btnExport').addEventListener('click', () => {
+  const s = getSession(currentId);
+  if (!s) return;
+  if (!s.records.length) { toast('Sin registros para exportar', true); return; }
 
-  const total  = pesos.length;
-  const suma   = pesos.reduce((a, b) => a + b, 0);
-  const prom   = (suma / total).toFixed(1);
-  const minP   = Math.min(...pesos).toFixed(1);
-  const maxP   = Math.max(...pesos).toFixed(1);
-
-  box.innerHTML = `
-    <div class="pesaje-summary">
-      <div class="pesaje-summary-title">▸ Resumen de pesaje</div>
-      <div class="pesaje-stats">
-        <div class="stat-cell">
-          <div class="stat-label">Animales</div>
-          <div class="stat-value">${total}</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Promedio</div>
-          <div class="stat-value">${prom} <span class="stat-unit">kg</span></div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Mínimo</div>
-          <div class="stat-value">${minP} <span class="stat-unit">kg</span></div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-label">Máximo</div>
-          <div class="stat-value">${maxP} <span class="stat-unit">kg</span></div>
-        </div>
-      </div>
-    </div>`;
-  box.style.display = 'block';
-}
-
-/* ── Venta summary ── */
-function renderVentaSummary(recs) {
-  const box = document.getElementById('pesajeSummary');
-  if (!recs.length) { box.style.display = 'none'; return; }
-  box.innerHTML = `
-    <div class="pesaje-summary" style="border-left-color:#e87040">
-      <div class="pesaje-summary-title" style="color:#e87040">▸ Resumen de venta / auditoría</div>
-      <div class="pesaje-stats">
-        <div class="stat-cell">
-          <div class="stat-label">Total animales</div>
-          <div class="stat-value" style="color:#e87040">${recs.length}</div>
-        </div>
-      </div>
-    </div>`;
-  box.style.display = 'block';
-}
-
-/* ── Mortandad summary ── */
-function renderMortandadSummary(recs) {
-  const box = document.getElementById('pesajeSummary');
-  if (!recs.length) { box.style.display = 'none'; return; }
-
-  const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
-  const counts = {};
-  CAUSAS.forEach(c => counts[c] = 0);
-  recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
-
-  const catRows = CAUSAS
-    .filter(c => counts[c] > 0)
-    .map(c => `
-      <div class="cat-row">
-        <div class="cat-dot" style="background:#c04040"></div>
-        <div class="cat-name">${c}</div>
-        <div class="cat-count">${counts[c]}</div>
-        <div class="cat-pct">${((counts[c]/recs.length)*100).toFixed(1)}%</div>
-      </div>`).join('');
-
-  box.innerHTML = `
-    <div class="pesaje-summary" style="border-left-color:#c04040">
-      <div class="pesaje-summary-title" style="color:#c04040">▸ Resumen de mortandad</div>
-      <div class="pesaje-stats" style="margin-bottom:12px">
-        <div class="stat-cell">
-          <div class="stat-label">Total bajas</div>
-          <div class="stat-value" style="color:#c04040">${recs.length}</div>
-        </div>
-      </div>
-      <div class="prenez-cats">${catRows}</div>
-    </div>`;
-  box.style.display = 'block';
-}
-
-/* ── Render records ── */
-function renderRecords(recs, sess) {
-  const label = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
-  document.getElementById('recLabel').textContent = `REGISTROS (${recs.length})`;
-  const container = document.getElementById('recList');
-
-  // Summary routing
-  if (sess.type === 'pesaje') {
-    renderPesajeSummary(recs);
-  } else if (sess.type === 'prenez') {
-    renderPrenezSummary(recs);
-  } else if (sess.type === 'venta') {
-    renderVentaSummary(recs);
-  } else if (sess.type === 'mortandad') {
-    renderMortandadSummary(recs);
-  } else {
-    document.getElementById('pesajeSummary').style.display = 'none';
-  }
-
-  if (!recs.length) {
-    container.innerHTML = `<div class="empty" style="padding:30px 20px"><p>Sin registros aún.<br>Ingresá el primer animal arriba.</p></div>`;
+  if (typeof XLSX === 'undefined') {
+    toast('XLSX no disponible — revisá la conexión', true);
     return;
   }
 
-  const sorted = [...recs].sort((a, b) => new Date(b.ts) - new Date(a.ts));
-
-  container.innerHTML = sorted.map(r => {
-    let dataStr = '';
-    if (sess.type === 'pesaje') dataStr = `${r.data.peso} kg`;
-    else if (sess.type === 'servicio') {
-      dataStr = r.data.tipo;
-      if (r.data.toro) dataStr += ` · ${r.data.toro}`;
-      if (r.data.obs) dataStr += ` · ${r.data.obs}`;
+  // Armar filas según tipo
+  let headers, rows;
+  if (s.type === 'pesaje') {
+    headers = ['Fecha/Hora','ID Animal','Peso (kg)','Comentario'];
+    rows = s.records.map(r => [fmtDate(r.ts)+' '+fmtTime(r.ts), r.animal, r.peso, r.comm||'']);
+  } else if (s.type === 'servicio') {
+    headers = ['Fecha/Hora','ID Animal','Tipo Servicio','Toro/Pajuela','Comentario'];
+    rows = s.records.map(r => [fmtDate(r.ts)+' '+fmtTime(r.ts), r.animal, r.tipoServ, r.toro||'', r.comm||'']);
+  } else if (s.type === 'prenez') {
+    headers = ['Fecha/Hora','ID Animal','Resultado','Comentario'];
+    rows = s.records.map(r => [fmtDate(r.ts)+' '+fmtTime(r.ts), r.animal, r.prenez, r.comm||'']);
+  } else {
+    headers = ['Fecha/Hora','ID Animal','Comentario'];
+    rows = s.records.map(r => [fmtDate(r.ts)+' '+fmtTime(r.ts), r.animal, r.comm||'']);
+    if (s.sanProducto) {
+      rows.unshift([]);
+      rows.unshift(['Producto', s.sanProducto, 'Dosis', s.sanDosis+' ml', 'Vía', s.sanVia, 'Lote', s.sanLote]);
+      rows.unshift(['DATOS DEL TRATAMIENTO']);
+      rows.unshift([]);
     }
-    else if (sess.type === 'prenez') {
-      dataStr = r.data.resultado;
-    }
-    else if (sess.type === 'sanitacion') dataStr = '✓ tratado';
-    else if (sess.type === 'venta')      dataStr = '✓ auditado';
-    else if (sess.type === 'mortandad')  dataStr = r.data.causa || '';
-
-    const comentario = r.data.comentario ? `<div class="record-comment">💬 ${esc(r.data.comentario)}</div>` : '';
-    const time = new Date(r.ts).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
-
-    return `
-      <div class="record-item">
-        <div style="min-width:0;flex:1">
-          <div class="record-id">${esc(r.animalId)}</div>
-          <div class="record-data">${esc(dataStr)}</div>
-          ${comentario}
-        </div>
-        <div class="record-right">
-          <span class="record-time">${time}</span>
-          <button class="del-btn" onclick="delRecord(${r.id})">✕</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-async function delRecord(id) {
-  if (!confirm('¿Eliminar este registro?')) return;
-  await dbDel('records', id);
-  await loadSession(currentSessId);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   EXPORT TO EXCEL
-   ═══════════════════════════════════════════════════════════ */
-async function exportExcel() {
-  const sess = await dbGet('sessions', currentSessId);
-  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
-
-  if (!recs.length) { toast('No hay registros para exportar', true); return; }
-
-  const sorted = [...recs].sort((a, b) => new Date(a.ts) - new Date(b.ts));
-  let rows = [];
-
-  if (sess.type === 'pesaje') {
-    rows = sorted.map(r => ({
-      'Sesión':       sess.name,
-      'Fecha':        sess.date,
-      'Hora':         fmtTime(r.ts),
-      'ID Animal':    r.animalId,
-      'Peso (kg)':    r.data.peso,
-      'Comentario':   r.data.comentario || ''
-    }));
-  } else if (sess.type === 'servicio') {
-    rows = sorted.map(r => ({
-      'Sesión':          sess.name,
-      'Fecha':           sess.date,
-      'Hora':            fmtTime(r.ts),
-      'ID Animal':       r.animalId,
-      'Tipo':            r.data.tipo,
-      'Toro/Semental':   r.data.toro,
-      'Observación':     r.data.obs,
-      'Comentario':      r.data.comentario || ''
-    }));
-  } else if (sess.type === 'prenez') {
-    rows = sorted.map(r => ({
-      'Sesión':      sess.name,
-      'Fecha':       sess.date,
-      'Hora':        fmtTime(r.ts),
-      'ID Animal':   r.animalId,
-      'Resultado':   r.data.resultado,
-      'Comentario':  r.data.comentario || ''
-    }));
-  } else if (sess.type === 'sanitacion') {
-    rows = sorted.map(r => ({
-      'Sesión':      sess.name,
-      'Fecha':       sess.date,
-      'Hora':        fmtTime(r.ts),
-      'ID Animal':   r.animalId,
-      'Producto':    sess.meta.producto,
-      'Dosis (ml)':  sess.meta.dosis,
-      'Vía':         sess.meta.via,
-      'Lote':        sess.meta.lote || '',
-      'Comentario':  r.data.comentario || ''
-    }));
-  } else if (sess.type === 'venta') {
-    rows = sorted.map((r, i) => ({
-      'N°':          i + 1,
-      'Sesión':      sess.name,
-      'Fecha':       sess.date,
-      'Hora':        fmtTime(r.ts),
-      'ID Animal':   r.animalId,
-      'Comentario':  r.data.comentario || ''
-    }));
-  } else if (sess.type === 'mortandad') {
-    rows = sorted.map(r => ({
-      'Sesión':      sess.name,
-      'Fecha':       sess.date,
-      'Hora':        fmtTime(r.ts),
-      'ID Animal':   r.animalId,
-      'Causa':       r.data.causa || '',
-      'Comentario':  r.data.comentario || ''
-    }));
   }
 
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-
-  // Column widths
-  ws['!cols'] = Object.keys(rows[0]).map(k => ({
-    wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2
-  }));
-
-  XLSX.utils.book_append_sheet(wb, ws, sess.type.toUpperCase().slice(0, 10));
-
-  // Pesaje: add summary sheet
-  if (sess.type === 'pesaje') {
-    const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
-    if (pesos.length) {
-      const suma = pesos.reduce((a, b) => a + b, 0);
-      const summaryRows = [
-        { 'Concepto': 'Total animales',   'Valor': pesos.length,                           'Unidad': '' },
-        { 'Concepto': 'Peso promedio',    'Valor': parseFloat((suma / pesos.length).toFixed(1)), 'Unidad': 'kg' },
-        { 'Concepto': 'Peso total',       'Valor': parseFloat(suma.toFixed(1)),             'Unidad': 'kg' },
-        { 'Concepto': 'Peso mínimo',      'Valor': parseFloat(Math.min(...pesos).toFixed(1)), 'Unidad': 'kg' },
-        { 'Concepto': 'Peso máximo',      'Valor': parseFloat(Math.max(...pesos).toFixed(1)), 'Unidad': 'kg' },
-      ];
-      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
-      wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 8 }];
-      XLSX.utils.book_append_sheet(wb, wsSummary, 'RESUMEN');
-    }
-  }
-
-  // Preñez: add summary sheet
-  if (sess.type === 'prenez' && recs.length) {
-    const CATS = [
-      'Preñada Grande', 'Preñada Mediana', 'Preñada Chica', 'Preñada CUT',
-      'Vacía Buena', 'Vacía Descarte'
-    ];
-    const counts = {};
-    CATS.forEach(c => counts[c] = 0);
-    recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
-
-    const total = recs.length;
-    const totalPren = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].reduce((s,k) => s+counts[k], 0);
-    const totalVac  = ['Vacía Buena','Vacía Descarte'].reduce((s,k) => s+counts[k], 0);
-    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
-
-    const summaryRows = [
-      { 'Categoría': 'TOTAL ANIMALES',  'Cantidad': total,        'Porcentaje': '' },
-      { 'Categoría': '— PREÑADAS —',    'Cantidad': totalPren,    'Porcentaje': pct(totalPren) + '%' },
-      ...['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].map(k => ({
-        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
-      })),
-      { 'Categoría': '— VACÍAS —',      'Cantidad': totalVac,     'Porcentaje': pct(totalVac) + '%' },
-      ...['Vacía Buena','Vacía Descarte'].map(k => ({
-        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
-      })),
-    ];
-    const wsPrenez = XLSX.utils.json_to_sheet(summaryRows);
-    wsPrenez['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, wsPrenez, 'RESUMEN');
-  }
-
-  // Mortandad: add summary sheet
-  if (sess.type === 'mortandad' && recs.length) {
-    const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
-    const counts = {};
-    CAUSAS.forEach(c => counts[c] = 0);
-    recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
-    const total = recs.length;
-    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
-    const summaryRows = [
-      { 'Concepto': 'TOTAL BAJAS', 'Cantidad': total, 'Porcentaje': '' },
-      ...CAUSAS.filter(c => counts[c] > 0).map(c => ({
-        'Concepto': c, 'Cantidad': counts[c], 'Porcentaje': pct(counts[c]) + '%'
-      }))
-    ];
-    const wsMort = XLSX.utils.json_to_sheet(summaryRows);
-    wsMort['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, wsMort, 'RESUMEN');
-  }
-
-  // Venta: add summary sheet
-  if (sess.type === 'venta' && recs.length) {
-    const summaryRows = [
-      { 'Concepto': 'Sesión',          'Valor': sess.name },
-      { 'Concepto': 'Fecha',           'Valor': sess.date },
-      { 'Concepto': 'Total animales',  'Valor': recs.length },
-    ];
-    const wsVenta = XLSX.utils.json_to_sheet(summaryRows);
-    wsVenta['!cols'] = [{ wch: 20 }, { wch: 20 }];
-    XLSX.utils.book_append_sheet(wb, wsVenta, 'RESUMEN');
-  }
-
-  const fname = `FieldTraz_${sess.name.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_')}_${sess.date}.xlsx`;
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map(() => ({ wch: 22 }));
+  XLSX.utils.book_append_sheet(wb, ws, s.type.toUpperCase());
+  const fname = `FieldTraz_${s.name.replace(/[^a-zA-Z0-9]/g,'_')}_${fmtDate(s.ts).replace(/\//g,'-')}.xlsx`;
   XLSX.writeFile(wb, fname);
   toast('✓ Excel exportado');
+});
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DELETE SESSION
-   ═══════════════════════════════════════════════════════════ */
-async function deleteSession() {
-  if (!confirm('¿Eliminar esta sesión y todos sus registros?\n\nEsta acción no se puede deshacer.')) return;
-  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
-  for (const r of recs) await dbDel('records', r.id);
-  await dbDel('sessions', currentSessId);
-  currentSessId = null;
-  goHome();
-  toast('Sesión eliminada');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   UTILS
-   ═══════════════════════════════════════════════════════════ */
-function todayDate() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function fmtDate(s) {
-  if (!s) return '';
-  const [y, m, d] = s.split('-');
-  return `${d}/${m}/${y}`;
-}
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
-}
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-let _toastTimer;
-function toast(msg, isError = false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show' + (isError ? ' error' : '');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════════════════════════ */
-initDB()
-  .then(() => loadHome())
-  .catch(err => {
-    document.body.innerHTML = `<div style="padding:24px;color:#c00;font-family:monospace">
-      <strong>Error al iniciar la base de datos:</strong><br>${err}</div>`;
-  });
+// ═══════════════════════════════════════════
+//  ARRANQUE
+// ═══════════════════════════════════════════
+loadDB();
+renderHome();
 </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('FieldTraz offline OK'))
-          .catch(err => console.warn('SW 
+</body>
+</html>
