@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>FieldTraz</title>
+  <title>TIGGA Corral</title>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="FieldTraz">
+  <meta name="apple-mobile-web-app-title" content="TIGGA Corral">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="theme-color" content="#c47f00">
+  <meta name="theme-color" content="#e85500">
   <link rel="manifest" href="./manifest.json">
   <script src="./xlsx.full.min.js"></script>
   <style>
@@ -17,10 +17,10 @@
       --surface: #ffffff;
       --surface2: #eef0f3;
       --border: #d0d5dd;
-      --accent: #c47f00;
-      --accent-dim: #fdecc8;
+      --accent: #e85500;
+      --accent-dim: #fff0e6;
       --text: #1a1f2e;
-      --text-dim: #6b7280;
+      --text-dim: #333333;
       --green: #1e7a46;
       --red: #c0392b;
       --blue: #1d5fa8;
@@ -67,7 +67,7 @@
 
     /* ── SECTION LABEL ── */
     .section-label {
-      font-size: 10px; letter-spacing: 3px; color: var(--text-dim);
+      font-size: 10px; letter-spacing: 3px; color: #222;
       text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
     }
 
@@ -171,7 +171,7 @@
       padding: 11px 13px; margin-bottom: 7px;
       display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
-    .record-id { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .record-id { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
     .record-data { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
     .record-comment { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
     .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
@@ -307,7 +307,7 @@
       position: fixed; bottom: 22px; right: 18px; width: 58px; height: 58px;
       background: var(--accent); color: #000; border: none; font-size: 30px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(196,127,0,0.30); border-radius: 0;
+      box-shadow: 0 4px 16px rgba(232,85,0,0.30); border-radius: 0;
       font-family: 'Courier New', monospace; font-weight: 700;
     }
     .fab:active { filter: brightness(0.8); }
@@ -336,19 +336,19 @@
     .act-desc { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.6; }
     .act-input { width: 100%; background: #f7f7f7; border: 2px solid var(--border); color: var(--text); padding: 14px; font-family: 'Courier New', monospace; font-size: 13px; outline: none; text-transform: uppercase; letter-spacing: 1px; }
     .act-input:focus { border-color: var(--accent); }
-    .act-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: #000; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; margin-top: 12px; }
+    .act-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: #fff; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; margin-top: 12px; }
     .act-btn:active { filter: brightness(0.85); }
     .act-error { font-size: 12px; color: var(--red); margin-top: 10px; display: none; font-weight: 600; }
     .act-contact { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 16px; line-height: 1.8; }
 
     /* ── GRACE PERIOD BANNER ── */
     .grace-banner {
-      background: #fff3cd; border-bottom: 2px solid #c47f00;
-      padding: 8px 16px; font-size: 12px; color: #7a4f00;
+      background: #fff3e6; border-bottom: 2px solid #e85500;
+      padding: 8px 16px; font-size: 12px; color: #7a2a00;
       display: flex; align-items: center; justify-content: space-between;
       font-family: 'Courier New', monospace;
     }
-    .grace-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #7a4f00; padding: 0 4px; }
+    .grace-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #7a2a00; padding: 0 4px; }
 
     /* ── EXPIRED SCREEN ── */
     .exp-overlay {
@@ -368,8 +368,8 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-logo">
-    <div class="header-title">FIELDTRAZ</div>
-    <div class="header-sub">GESTIÓN DE CAMPO</div>
+    <div class="header-title">TIGGA CORRAL</div>
+    <div class="header-sub">GESTIÓN DE CORRAL</div>
   </div>
   <div id="headerAction"></div>
 </div>
@@ -478,7 +478,7 @@
 /* ═══════════════════════════════════════════════════════════
    DATABASE — IndexedDB
    ═══════════════════════════════════════════════════════════ */
-const DB_NAME = 'fieldtraz_v1';
+const DB_NAME = 'tigga_corral_v1';
 let db, currentSessId = null;
 
 function initDB() {
@@ -692,7 +692,7 @@ function buildInputArea(type) {
   let html = `
     <div class="form-group">
       <label>ID Animal — chip RFID o caravana</label>
-      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric">
+      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric" style="font-size:20px;font-weight:700;padding:16px 12px;">
     </div>`;
 
   if (type === 'pesaje') {
@@ -1201,7 +1201,7 @@ async function exportExcel() {
     XLSX.utils.book_append_sheet(wb, wsVenta, 'RESUMEN');
   }
 
-  const fname = `FieldTraz_${sess.name.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_')}_${sess.date}.xlsx`;
+  const fname = `TIGGA Corral_${sess.name.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_')}_${sess.date}.xlsx`;
   XLSX.writeFile(wb, fname);
   toast('✓ Excel exportado');
 }
@@ -1273,7 +1273,7 @@ async function decodeActivationCode(code) {
 }
 
 function getLicenseStatus() {
-  const act = JSON.parse(localStorage.getItem('ft_activation') || 'null');
+  const act = JSON.parse(localStorage.getItem('tc_activation') || 'null');
   if (!act) return 'none';
   const now = new Date(); now.setHours(0,0,0,0);
   const venc = new Date(act.vencimiento);
@@ -1292,12 +1292,12 @@ async function activarApp() {
     errEl.style.display = 'block';
     return;
   }
-  localStorage.setItem('ft_activation', JSON.stringify({
+  localStorage.setItem('tc_activation', JSON.stringify({
     code, estancia: data.estancia, vencimiento: data.vencimiento,
     activatedAt: new Date().toISOString()
   }));
   document.getElementById('actOverlay').style.display = 'none';
-  toast('✓ FieldTraz activado');
+  toast('✓ TIGGA Corral activado');
   loadHome();
 }
 
@@ -1321,8 +1321,8 @@ function checkActivation() {
 }
 
 function contactarRenovacion() {
-  const act = JSON.parse(localStorage.getItem('ft_activation') || '{}');
-  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de FieldTraz. Estancia: ${act.estancia || '-'}`);
+  const act = JSON.parse(localStorage.getItem('tc_activation') || '{}');
+  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral. Estancia: ${act.estancia || '-'}`);
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
@@ -1342,7 +1342,7 @@ initDB()
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('FieldTraz offline OK'))
+          .then(() => console.log('TIGGA Corral offline OK'))
           .catch(e => console.warn('SW:', e));
       });
     }
@@ -1350,18 +1350,18 @@ initDB()
 
 <!-- ACTIVATION OVERLAY -->
 <div class="act-overlay" id="actOverlay" style="display:none">
-  <div class="act-logo">FIELDTRAZ</div>
+  <div class="act-logo">TIGGA CORRAL</div>
   <div class="act-sub">Gestión de Campo Ganadera</div>
   <div class="act-card">
     <div class="act-title">▸ Activación requerida</div>
-    <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de FieldTraz.</div>
+    <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de TIGGA Corral.</div>
     <input class="act-input" id="actCodeInput" type="text" placeholder="FT-XXXXXX-XXXXXX-XXXX-XXXXXXXX-XXXX" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     <button class="act-btn" onclick="activarApp()">ACTIVAR</button>
     <div class="act-error" id="actError">Código inválido. Verificá e intentá de nuevo.</div>
   </div>
   <div class="act-contact">
     ¿Necesitás un código?<br>
-    Contactá a tu proveedor de FieldTraz
+    Contactá a tu proveedor de TIGGA Corral
   </div>
 </div>
 
@@ -1375,7 +1375,7 @@ initDB()
 <div class="exp-overlay" id="expOverlay" style="display:none">
   <div class="exp-icon">🔒</div>
   <div class="exp-title">Licencia vencida</div>
-  <div class="exp-desc">Tu período de gracia de 10 días ha terminado.<br>Contactá a tu proveedor para renovar y seguir usando FieldTraz.</div>
+  <div class="exp-desc">Tu período de gracia de 10 días ha terminado.<br>Contactá a tu proveedor para renovar y seguir usando TIGGA Corral.</div>
   <button class="exp-contact" onclick="contactarRenovacion()">CONTACTAR PARA RENOVAR</button>
 </div>
 

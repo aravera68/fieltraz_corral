@@ -1,12 +1,12 @@
 {
-  "name": "FieldTraz - Gestión de Campo",
-  "short_name": "FieldTraz",
-  "description": "App offline para registro de tareas ganaderas en el campo",
+  "name": "TIGGA Corral - Gestión de Corral",
+  "short_name": "TIGGA Corral",
+  "description": "App offline para registro de tareas ganaderas en el corral",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f2f4f6",
-  "theme_color": "#c47f00",
+  "theme_color": "#e85500",
   "lang": "es",
   "icons": [
     {
