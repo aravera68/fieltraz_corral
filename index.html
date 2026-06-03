@@ -322,6 +322,45 @@
     }
     .toast.error { background: var(--red); }
     .toast.show { opacity: 1; }
+
+    /* ── ACTIVATION SCREEN ── */
+    .act-overlay {
+      position: fixed; inset: 0; background: #f2f4f6;
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .act-logo { font-size: 32px; font-weight: 900; color: var(--accent); letter-spacing: 4px; margin-bottom: 4px; }
+    .act-sub { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 32px; }
+    .act-card { background: #fff; border: 1px solid var(--border); padding: 28px; width: 100%; max-width: 380px; }
+    .act-title { font-size: 11px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .act-desc { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.6; }
+    .act-input { width: 100%; background: #f7f7f7; border: 2px solid var(--border); color: var(--text); padding: 14px; font-family: 'Courier New', monospace; font-size: 13px; outline: none; text-transform: uppercase; letter-spacing: 1px; }
+    .act-input:focus { border-color: var(--accent); }
+    .act-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: #000; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; margin-top: 12px; }
+    .act-btn:active { filter: brightness(0.85); }
+    .act-error { font-size: 12px; color: var(--red); margin-top: 10px; display: none; font-weight: 600; }
+    .act-contact { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 16px; line-height: 1.8; }
+
+    /* ── GRACE PERIOD BANNER ── */
+    .grace-banner {
+      background: #fff3cd; border-bottom: 2px solid #c47f00;
+      padding: 8px 16px; font-size: 12px; color: #7a4f00;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Courier New', monospace;
+    }
+    .grace-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #7a4f00; padding: 0 4px; }
+
+    /* ── EXPIRED SCREEN ── */
+    .exp-overlay {
+      position: fixed; inset: 0; background: #fff8f0;
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .exp-icon { font-size: 48px; margin-bottom: 16px; }
+    .exp-title { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .exp-desc { font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.8; max-width: 320px; margin-bottom: 24px; }
+    .exp-contact { background: var(--green); color: #fff; padding: 14px 28px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; border: none; cursor: pointer; }
+
   </style>
 </head>
 <body>
@@ -1208,11 +1247,92 @@ function toast(msg, isError = false) {
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVATION SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+const FT_SECRET = "FT2025PY_k9x";
+const GRACE_DAYS = 10;
+
+async function sha256hex(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+
+async function decodeActivationCode(code) {
+  try {
+    const p = code.toUpperCase().trim().split('-');
+    if (p.length !== 6 || p[0] !== 'FT') return null;
+    const [_,h1,h2,h3,dateC,est] = p;
+    if (dateC.length !== 8 || est.length !== 4) return null;
+    const h = await sha256hex(`${est}|${dateC}|${FT_SECRET}`);
+    if (h1!==h.slice(0,6)||h2!==h.slice(6,12)||h3!==h.slice(12,16)) return null;
+    const fecha = `${dateC.slice(0,4)}-${dateC.slice(4,6)}-${dateC.slice(6,8)}`;
+    return { estancia: est, vencimiento: fecha };
+  } catch { return null; }
+}
+
+function getLicenseStatus() {
+  const act = JSON.parse(localStorage.getItem('ft_activation') || 'null');
+  if (!act) return 'none';
+  const now = new Date(); now.setHours(0,0,0,0);
+  const venc = new Date(act.vencimiento);
+  const diff = Math.floor((venc - now) / 86400000);
+  if (diff >= 0) return 'active';
+  if (diff >= -GRACE_DAYS) return { grace: Math.abs(diff) };
+  return 'expired';
+}
+
+async function activarApp() {
+  const code = document.getElementById('actCodeInput').value.trim();
+  const errEl = document.getElementById('actError');
+  errEl.style.display = 'none';
+  const data = await decodeActivationCode(code);
+  if (!data) {
+    errEl.style.display = 'block';
+    return;
+  }
+  localStorage.setItem('ft_activation', JSON.stringify({
+    code, estancia: data.estancia, vencimiento: data.vencimiento,
+    activatedAt: new Date().toISOString()
+  }));
+  document.getElementById('actOverlay').style.display = 'none';
+  toast('✓ FieldTraz activado');
+  loadHome();
+}
+
+function checkActivation() {
+  const status = getLicenseStatus();
+  if (status === 'none') {
+    document.getElementById('actOverlay').style.display = 'flex';
+    return false;
+  }
+  if (status === 'expired') {
+    document.getElementById('expOverlay').style.display = 'flex';
+    return false;
+  }
+  if (typeof status === 'object' && status.grace !== undefined) {
+    const banner = document.getElementById('graceBanner');
+    document.getElementById('graceMsg').textContent =
+      `⚠ Tu licencia venció hace ${status.grace} día${status.grace>1?'s':''}. Tenés ${GRACE_DAYS - status.grace} días para renovar.`;
+    banner.style.display = 'flex';
+  }
+  return true;
+}
+
+function contactarRenovacion() {
+  const act = JSON.parse(localStorage.getItem('ft_activation') || '{}');
+  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de FieldTraz. Estancia: ${act.estancia || '-'}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
 initDB()
-  .then(() => loadHome())
+  .then(() => {
+    if (checkActivation()) loadHome();
+  })
   .catch(err => {
     document.body.innerHTML = `<div style="padding:24px;color:#c00;font-family:monospace">
       <strong>Error al iniciar la base de datos:</strong><br>${err}</div>`;
@@ -1227,5 +1347,37 @@ initDB()
       });
     }
   </script>
+
+<!-- ACTIVATION OVERLAY -->
+<div class="act-overlay" id="actOverlay" style="display:none">
+  <div class="act-logo">FIELDTRAZ</div>
+  <div class="act-sub">Gestión de Campo Ganadera</div>
+  <div class="act-card">
+    <div class="act-title">▸ Activación requerida</div>
+    <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de FieldTraz.</div>
+    <input class="act-input" id="actCodeInput" type="text" placeholder="FT-XXXXXX-XXXXXX-XXXX-XXXXXXXX-XXXX" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <button class="act-btn" onclick="activarApp()">ACTIVAR</button>
+    <div class="act-error" id="actError">Código inválido. Verificá e intentá de nuevo.</div>
+  </div>
+  <div class="act-contact">
+    ¿Necesitás un código?<br>
+    Contactá a tu proveedor de FieldTraz
+  </div>
+</div>
+
+<!-- GRACE PERIOD BANNER -->
+<div class="grace-banner" id="graceBanner" style="display:none">
+  <span id="graceMsg">⚠ Tu licencia venció. Tenés X días para renovar.</span>
+  <button class="grace-close" onclick="document.getElementById('graceBanner').style.display='none'">×</button>
+</div>
+
+<!-- EXPIRED OVERLAY -->
+<div class="exp-overlay" id="expOverlay" style="display:none">
+  <div class="exp-icon">🔒</div>
+  <div class="exp-title">Licencia vencida</div>
+  <div class="exp-desc">Tu período de gracia de 10 días ha terminado.<br>Contactá a tu proveedor para renovar y seguir usando FieldTraz.</div>
+  <button class="exp-contact" onclick="contactarRenovacion()">CONTACTAR PARA RENOVAR</button>
+</div>
+
 </body>
 </html>
