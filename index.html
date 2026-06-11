@@ -1,535 +1,1376 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-  <meta name="theme-color" content="#1a3a0a"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <title>FieldTraz</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="stylesheet" href="css/app.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>TIGGA Corral</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TIGGA Corral">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#e85500">
+  <link rel="manifest" href="./manifest.json">
+  <script src="./xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f2f4f6;
+      --surface: #ffffff;
+      --surface2: #eef0f3;
+      --border: #d0d5dd;
+      --accent: #e85500;
+      --accent-dim: #fff0e6;
+      --text: #1a1f2e;
+      --text-dim: #333333;
+      --green: #1e7a46;
+      --red: #c0392b;
+      --blue: #1d5fa8;
+      --purple: #6b3fa0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 520px;
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .header-logo { display: flex; flex-direction: column; }
+    .header-title { font-size: 21px; font-weight: 900; color: var(--accent); letter-spacing: 3px; line-height: 1; }
+    .header-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
+    .back-btn {
+      background: none; border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer;
+      padding: 6px 12px; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .back-btn:active { background: var(--accent-dim); }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 14px 16px; }
+    .screen.active { display: block; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 10px; letter-spacing: 3px; color: #222;
+      text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+    }
+
+    /* ── SESSION CARDS ── */
+    .session-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--accent); padding: 13px 15px;
+      margin-bottom: 10px; cursor: pointer; user-select: none;
+    }
+    .session-card:active { background: var(--surface2); }
+    .session-name { font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .session-meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+    .tag {
+      display: inline-block; font-size: 9px; padding: 2px 7px;
+      border: 1px solid; margin-top: 7px; letter-spacing: 2px; font-weight: 700;
+    }
+    .tag-pesaje     { color: #e8a000; border-color: #e8a000; }
+    .tag-servicio   { color: #4a9eda; border-color: #4a9eda; }
+    .tag-prenez     { color: #a07ad4; border-color: #a07ad4; }
+    .tag-sanitacion { color: #4ec47a; border-color: #4ec47a; }
+    .tag-venta      { color: #e87040; border-color: #e87040; }
+    .tag-mortandad  { color: #c04040; border-color: #c04040; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center; padding: 50px 20px; color: var(--text-dim);
+    }
+    .empty .icon { font-size: 44px; margin-bottom: 14px; }
+    .empty p { font-size: 13px; letter-spacing: 1px; line-height: 1.8; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: block; width: 100%; padding: 15px 12px;
+      font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn:active { filter: brightness(0.8); }
+    .btn + .btn { margin-top: 10px; }
+    .btn-primary  { background: var(--accent); color: #000; }
+    .btn-outline  { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+    .btn-success  { background: var(--green); color: #fff; }
+    .btn-danger   { background: var(--red); color: #fff; }
+    .btn-sm       { width: auto; display: inline-block; padding: 7px 12px; font-size: 11px; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block; font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 13px 12px;
+      font-family: 'Courier New', monospace; font-size: 15px;
+      outline: none; appearance: none; border-radius: 0;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%236b7280' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+    select option { background: #fff; color: #1a1f2e; }
+    .row { display: flex; gap: 10px; }
+    .row .form-group { flex: 1; min-width: 0; }
+
+    /* ── SESSION HEADER BOX ── */
+    .session-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-top: 3px solid var(--accent); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .session-box h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .session-box .meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+    .count-chip {
+      display: inline-block; background: var(--accent); color: #000;
+      font-size: 11px; font-weight: 700; padding: 2px 10px; margin-top: 8px; letter-spacing: 2px;
+    }
+
+    /* ── TREATMENT INFO BOX ── */
+    .treat-box {
+      background: var(--surface2); border: 1px solid var(--accent-dim);
+      padding: 12px 14px; margin-bottom: 14px;
+    }
+    .treat-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 2px; }
+    .treat-item { }
+    .treat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .treat-value { font-size: 13px; color: var(--text); margin-top: 1px; }
+
+    /* ── INPUT AREA ── */
+    .input-area {
+      background: var(--surface); border: 2px solid var(--accent);
+      padding: 14px; margin-bottom: 14px;
+    }
+    .input-area-title {
+      font-size: 10px; letter-spacing: 3px; color: var(--accent);
+      text-transform: uppercase; margin-bottom: 12px; font-weight: 700;
+    }
+
+    /* ── RECORD ITEMS ── */
+    .record-item {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 11px 13px; margin-bottom: 7px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .record-id { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .record-data { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .record-comment { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
+    .record-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .record-time { font-size: 11px; color: var(--text-dim); }
+    .del-btn {
+      background: none; border: 1px solid var(--red); color: var(--red);
+      padding: 3px 8px; font-family: 'Courier New', monospace; font-size: 11px; cursor: pointer;
+    }
+    .del-btn:active { background: var(--red); color: #fff; }
+
+    /* ── PREÑEZ SUMMARY ── */
+    .prenez-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--purple); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .prenez-summary-title {
+      font-size: 9px; letter-spacing: 3px; color: var(--purple);
+      text-transform: uppercase; font-weight: 700; margin-bottom: 12px;
+    }
+    .prenez-totals { display: flex; gap: 0; margin-bottom: 14px; }
+    .prenez-total-cell {
+      flex: 1; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
+    }
+    .prenez-total-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .prenez-total-cell:first-child { padding-left: 0; }
+    .prenez-total-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .prenez-total-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 2px; }
+    .prenez-total-pct { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+    /* Stacked bar */
+    .prenez-bar-wrap { margin-bottom: 12px; }
+    .prenez-bar {
+      height: 10px; display: flex; overflow: hidden; background: var(--border); margin-bottom: 6px;
+    }
+    .bar-seg { height: 100%; transition: width 0.4s; }
+    .bar-pg  { background: #2e8b57; }
+    .bar-pm  { background: #5ab878; }
+    .bar-pc  { background: #98dba8; }
+    .bar-pcut{ background: #c8f0d2; }
+    .bar-vb  { background: #888; }
+    .bar-vd  { background: #444; }
+
+    /* Category rows */
+    .prenez-cats { display: flex; flex-direction: column; gap: 5px; }
+    .cat-row { display: flex; align-items: center; gap: 8px; }
+    .cat-dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .cat-name { font-size: 11px; color: var(--text-dim); flex: 1; }
+    .cat-count { font-size: 13px; font-weight: 700; color: var(--text); min-width: 24px; text-align: right; }
+    .cat-pct { font-size: 11px; color: var(--text-dim); min-width: 42px; text-align: right; }
+
+    /* ── PESAJE SUMMARY ── */
+    .pesaje-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--green); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .pesaje-summary-title {
+      font-size: 9px; letter-spacing: 3px; color: var(--green);
+      text-transform: uppercase; font-weight: 700; margin-bottom: 10px;
+    }
+    .pesaje-stats { display: flex; gap: 0; flex-wrap: wrap; }
+    .stat-cell {
+      flex: 1; min-width: 0; padding: 6px 10px 6px 0; border-right: 1px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .stat-cell:first-child { padding-left: 0; }
+    .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 2px; line-height: 1; }
+    .stat-unit { font-size: 11px; color: var(--text-dim); }
+
+
+    /* ── PESAJE SUMMARY ── */
+    .pesaje-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--green); padding: 13px 15px; margin-bottom: 14px;
+    }
+    .pesaje-summary-title { font-size: 9px; letter-spacing: 3px; color: var(--green); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+    .pesaje-stats { display: flex; gap: 0; flex-wrap: wrap; }
+    .stat-cell { flex: 1; min-width: 0; padding: 6px 10px 6px 0; border-right: 1px solid var(--border); }
+    .stat-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .stat-cell:first-child { padding-left: 0; }
+    .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 2px; line-height: 1; }
+    .stat-unit { font-size: 11px; color: var(--text-dim); }
+
+    /* ── PREÑEZ SUMMARY ── */
+    .prenez-summary { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--purple); padding: 13px 15px; margin-bottom: 14px; }
+    .prenez-summary-title { font-size: 9px; letter-spacing: 3px; color: var(--purple); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
+    .prenez-totals { display: flex; gap: 0; margin-bottom: 14px; }
+    .prenez-total-cell { flex: 1; padding: 6px 10px 6px 0; border-right: 1px solid var(--border); }
+    .prenez-total-cell:last-child { border-right: none; padding-right: 0; padding-left: 10px; }
+    .prenez-total-cell:first-child { padding-left: 0; }
+    .prenez-total-label { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; }
+    .prenez-total-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 3px; }
+    .prenez-total-pct { font-size: 15px; font-weight: 700; color: #374151; margin-top: 3px; }
+    .prenez-bar-wrap { margin-bottom: 14px; }
+    .prenez-bar { height: 14px; display: flex; overflow: hidden; background: var(--border); margin-bottom: 8px; }
+    .bar-seg { height: 100%; transition: width 0.4s; }
+    .bar-pg { background: #2e8b57; } .bar-pm { background: #5ab878; }
+    .bar-pc { background: #98dba8; } .bar-pcut { background: #4a9a6a; }
+    .bar-vb { background: #888; }   .bar-vd  { background: #666; }
+    .prenez-cats { display: flex; flex-direction: column; gap: 7px; }
+    .cat-row { display: flex; align-items: center; gap: 10px; }
+    .cat-dot { width: 10px; height: 10px; flex-shrink: 0; }
+    .cat-name { font-size: 13px; color: #374151; flex: 1; font-weight: 600; }
+    .cat-count { font-size: 15px; font-weight: 700; color: var(--text); min-width: 28px; text-align: right; }
+    .cat-pct { font-size: 14px; font-weight: 700; color: #374151; min-width: 50px; text-align: right; }
+
+    /* ── DIAGNÓSTICO BUTTONS ── */
+    .prenez-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+    .prenez-btn {
+      padding: 18px 8px; border: 2px solid var(--border);
+      background: var(--surface2); color: #444;
+      font-family: 'Courier New', monospace; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+      text-align: center; line-height: 1.3; transition: all 0.15s;
+    }
+    .prenez-btn:active { filter: brightness(0.9); }
+    .prenez-btn.selected-pg   { background: #1a5c38; border-color: #2e8b57; color: #fff; }
+    .prenez-btn.selected-pm   { background: #1e6b3a; border-color: #5ab878; color: #fff; }
+    .prenez-btn.selected-pc   { background: #237042; border-color: #98dba8; color: #fff; }
+    .prenez-btn.selected-pcut { background: #2a7a50; border-color: #4a9a6a; color: #fff; }
+    .prenez-btn.selected-vb   { background: #555; border-color: #888; color: #fff; }
+    .prenez-btn.selected-vd   { background: #333; border-color: #666; color: #fff; }
+
+    /* ── RECORD COMMENT ── */
+    .record-comment { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
+
+    /* ── DIVIDER ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: 22px; right: 18px; width: 58px; height: 58px;
+      background: var(--accent); color: #000; border: none; font-size: 30px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(232,85,0,0.30); border-radius: 0;
+      font-family: 'Courier New', monospace; font-weight: 700;
+    }
+    .fab:active { filter: brightness(0.8); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 10px 20px;
+      font-family: 'Courier New', monospace; font-size: 13px; letter-spacing: 1px;
+      opacity: 0; pointer-events: none; z-index: 999; transition: opacity 0.25s;
+      white-space: nowrap;
+    }
+    .toast.error { background: var(--red); }
+    .toast.show { opacity: 1; }
+
+    /* ── ACTIVATION SCREEN ── */
+    .act-overlay {
+      position: fixed; inset: 0; background: #f2f4f6;
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .act-logo { font-size: 32px; font-weight: 900; color: var(--accent); letter-spacing: 4px; margin-bottom: 4px; }
+    .act-sub { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 32px; }
+    .act-card { background: #fff; border: 1px solid var(--border); padding: 28px; width: 100%; max-width: 380px; }
+    .act-title { font-size: 11px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .act-desc { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.6; }
+    .act-input { width: 100%; background: #f7f7f7; border: 2px solid var(--border); color: var(--text); padding: 14px; font-family: 'Courier New', monospace; font-size: 13px; outline: none; text-transform: uppercase; letter-spacing: 1px; }
+    .act-input:focus { border-color: var(--accent); }
+    .act-btn { display: block; width: 100%; padding: 14px; background: var(--accent); color: #fff; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; margin-top: 12px; }
+    .act-btn:active { filter: brightness(0.85); }
+    .act-error { font-size: 12px; color: var(--red); margin-top: 10px; display: none; font-weight: 600; }
+    .act-contact { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 16px; line-height: 1.8; }
+
+    /* ── GRACE PERIOD BANNER ── */
+    .grace-banner {
+      background: #fff3e6; border-bottom: 2px solid #e85500;
+      padding: 8px 16px; font-size: 12px; color: #7a2a00;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'Courier New', monospace;
+    }
+    .grace-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #7a2a00; padding: 0 4px; }
+
+    /* ── EXPIRED SCREEN ── */
+    .exp-overlay {
+      position: fixed; inset: 0; background: #fff8f0;
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .exp-icon { font-size: 48px; margin-bottom: 16px; }
+    .exp-title { font-size: 22px; font-weight: 700; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .exp-desc { font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.8; max-width: 320px; margin-bottom: 24px; }
+    .exp-contact { background: var(--green); color: #fff; padding: 14px 28px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; letter-spacing: 2px; border: none; cursor: pointer; }
+
+  </style>
 </head>
 <body>
 
-<!-- PANTALLA DE BIENVENIDA / SELECCIÓN DE ESTABLECIMIENTO -->
-<div id="screen-bienvenida" style="display:none;position:fixed;inset:0;z-index:800;background:var(--green-700);flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 24px;overflow-y:auto;">
-  <div style="width:100%;max-width:360px;padding-bottom:40px">
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:32px;margin-top:20px">
-      <div style="width:72px;height:72px;background:var(--green-600);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:2px solid var(--green-400)">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M8 30c0-6 4.5-11 12-11s12 5 12 11" stroke="#C0DD97" stroke-width="2.5" stroke-linecap="round"/><circle cx="20" cy="13" r="5" stroke="#C0DD97" stroke-width="2.5"/><path d="M4 32h32" stroke="#C0DD97" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div style="font-size:28px;font-weight:700;color:#C0DD97;letter-spacing:-0.5px">FieldTraz</div>
-      <div style="font-size:13px;color:var(--green-400);margin-top:4px">Gestión Ganadera</div>
-    </div>
-
-    <!-- Lista de establecimientos registrados -->
-    <div id="listaEstablecimientos" style="display:none;margin-bottom:16px"></div>
-
-    <!-- Card para ingresar nuevo código -->
-    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(192,221,151,0.2);border-radius:20px;padding:24px">
-      <div style="font-size:15px;font-weight:600;color:#C0DD97;margin-bottom:6px" id="welcomeCardTitle">Ingresá tu licencia</div>
-      <div style="font-size:13px;color:var(--green-400);margin-bottom:20px">Cada establecimiento tiene su propio código de acceso.</div>
-
-      <div style="margin-bottom:14px">
-        <label style="font-size:11px;color:var(--green-400);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Código de licencia</label>
-        <input id="bienvenidaToken" type="text" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-          style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(192,221,151,0.3);border-radius:10px;font-size:13px;color:#C0DD97;font-family:monospace;letter-spacing:1px;outline:none;"
-          onkeydown="if(event.key==='Enter')activarDesdeWelcome()"/>
-      </div>
-
-      <div id="bienvenidaError" style="display:none;color:#F09595;font-size:12px;margin-bottom:12px;padding:8px 12px;background:rgba(224,92,92,0.1);border-radius:8px"></div>
-
-      <button id="bienvenidaBtn" onclick="activarDesdeWelcome()"
-        style="width:100%;padding:13px;background:#3B6D11;color:#C0DD97;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">
-        Ingresar →
-      </button>
-
-      <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--green-400)">
-        ¿No tenés licencia? Contactá a tu proveedor de FieldTraz.
-      </div>
-    </div>
-
-    <!-- Modo demo -->
-    <button onclick="entrarModoDemo()"
-      style="width:100%;margin-top:14px;padding:12px;background:transparent;border:1px solid rgba(192,221,151,0.2);border-radius:10px;font-size:13px;color:var(--green-400);cursor:pointer;">
-      Continuar en modo demo (hasta 20 animales, sin sync)
-    </button>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <div class="header-title">TIGGA CORRAL</div>
+    <div class="header-sub">GESTIÓN DE CORRAL</div>
   </div>
+  <div id="headerAction"></div>
 </div>
 
-<div class="topbar">
-  <button class="back-btn" id="backBtn" onclick="goBack()" style="display:none">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
-  <div class="topbar-brand">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#3B6D11"/><path d="M6 19c0-4 3.1-7 7-7s7 3 7 7" stroke="#C0DD97" stroke-width="1.8" stroke-linecap="round"/><circle cx="13" cy="9" r="3" stroke="#C0DD97" stroke-width="1.8"/><path d="M4 20h18" stroke="#C0DD97" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <div>
-      <span class="brand-name">FieldTraz</span>
-      <span class="brand-sub">Gestión Ganadera</span>
-    </div>
-  </div>
-  <span class="topbar-title" id="pageTitle"></span>
-  <div id="syncIndicator" class="sync-indicator sync-idle" onclick="mostrarModalLicencia()" title="Estado de sincronización">
-    <span class="sync-icon">☁️</span><span class="sync-text">Sin sync</span>
-  </div>
-  <button class="export-btn" id="exportTopBtn" onclick="showExportMenu()" style="display:none">
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v9M5 8l4 4 4-4M3 14h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
+<!-- ════════════════════════════════════
+     PANTALLA: INICIO
+     ════════════════════════════════════ -->
+<div id="screenHome" class="screen active">
+  <p class="section-label">Sesiones de trabajo</p>
+  <div id="sessionList"></div>
+  <button class="fab" onclick="goNewSession()" title="Nueva sesión">+</button>
 </div>
 
-<!-- BANNER DE ESTABLECIMIENTO — visible en todas las pantallas -->
-<div id="estabBanner" style="display:none;position:sticky;top:56px;z-index:99;background:#1a4d08;border-bottom:2px solid #4CAF50;padding:6px 16px;align-items:center;justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:16px">🏡</span>
-    <span id="estabBannerNombre" style="font-size:14px;font-weight:700;color:#C0DD97;letter-spacing:0.3px"></span>
-  </div>
-  <button onclick="mostrarModalLicencia()" style="font-size:10px;font-family:var(--fm);color:rgba(192,221,151,0.6);background:none;border:none;cursor:pointer;padding:2px 6px;">cambiar →</button>
-</div>
+<!-- ════════════════════════════════════
+     PANTALLA: NUEVA SESIÓN
+     ════════════════════════════════════ -->
+<div id="screenNew" class="screen">
+  <p class="section-label">Crear nueva sesión</p>
 
-<!-- HOME -->
-<div id="screen-home" class="screen active">
-  <div class="home-hero">
-    <div id="demoBanner" style="display:none;padding:8px 16px;font-size:12px;font-weight:500;color:#1a1a18;display:flex;align-items:center;justify-content:space-between;border-radius:10px;margin:10px 12px 0"></div>
-    <div class="hero-stat-row">
-      <div class="hero-stat"><span class="hero-num" id="statAnimales">0</span><span class="hero-lbl">Animales</span></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><span class="hero-num" id="statPesos">0</span><span class="hero-lbl">Pesajes</span></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><span class="hero-num" id="statDiag">0</span><span class="hero-lbl">Diagnósticos</span></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><span class="hero-num" id="statBajas">0</span><span class="hero-lbl">Bajas</span></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><span class="hero-num" id="statSanitarios">0</span><span class="hero-lbl">Sanit.</span></div>
+  <div class="form-group">
+    <label>Nombre de la sesión</label>
+    <input id="newName" type="text" placeholder="Ej: Pesaje Novillos Lote A" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label>Tipo de tarea</label>
+    <select id="newType" onchange="onTypeChange()">
+      <option value="">— Seleccionar —</option>
+      <option value="pesaje">Pesaje</option>
+      <option value="servicio">Servicio (Monta / IA)</option>
+      <option value="prenez">Diagnóstico de Preñez</option>
+      <option value="sanitacion">Sanitación / Vacunación</option>
+      <option value="venta">Venta / Auditoría</option>
+      <option value="mortandad">Mortandad</option>
+    </select>
+  </div>
+
+  <!-- Campos extra para sanitación -->
+  <div id="sanFields" style="display:none">
+    <hr>
+    <p class="section-label">Datos del tratamiento</p>
+    <div class="form-group">
+      <label>Producto</label>
+      <input id="sanProducto" type="text" placeholder="Ej: Ivermectina 1%" autocomplete="off">
     </div>
-  </div>
-  <div class="section-label">Tareas</div>
-  <div class="task-grid">
-    <button class="task-card t1" onclick="navigate('tarea1')">
-      <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="4" y="3" width="20" height="22" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M9 9h10M9 13h10M9 17h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-      <div class="task-label">Tarea 1</div><div class="task-name">Registro Animal</div><div class="task-desc">Ficha completa</div>
-    </button>
-    <button class="task-card t2" onclick="navigate('tarea2')">
-      <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 14h4l3-7 4 14 3-10 2 3h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="task-label">Tarea 2</div><div class="task-name">Pesaje</div><div class="task-desc">Peso por animal</div>
-    </button>
-    <button class="task-card t3" onclick="navigate('tarea3')">
-      <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="13" r="7" stroke="currentColor" stroke-width="1.8"/><circle cx="14" cy="13" r="3.5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 2"/><path d="M14 6V4M14 22v-2M6 13H4M24 13h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-      <div class="task-label">Tarea 3</div><div class="task-name">Diag. Preñez</div><div class="task-desc">Estado reproductivo</div>
-    </button>
-    <button class="task-card t5" onclick="navigate('tarea5')">
-      <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 6v10M10 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="18" width="16" height="6" rx="2" stroke="currentColor" stroke-width="1.6"/></svg></div>
-      <div class="task-label">Tarea 4</div><div class="task-name">Baja de Animal</div><div class="task-desc">Venta o muerte</div>
-    </button>
-    <button class="task-card t6" onclick="navigate('tarea6')">
-      <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M10 6l2 2-6 6-2-2 6-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 8l8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="20" cy="20" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M20 18v4M18 20h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-      <div class="task-label">Tarea 5</div><div class="task-name">Sanitarios</div><div class="task-desc">Vacunación y tratamientos</div>
-    </button>
-    <button class="task-card t4" onclick="navigate('lista')" style="grid-column:span 2">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="task-icon"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M5 8h18M5 14h18M5 20h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <div><div class="task-label">Registros</div><div class="task-name">Ver Animales</div><div class="task-desc">Lista, búsqueda e importación</div></div>
+    <div class="row">
+      <div class="form-group">
+        <label>Dosis (ml)</label>
+        <input id="sanDosis" type="number" placeholder="0.0" step="0.1" min="0">
       </div>
-    </button>
-  </div>
-</div>
-
-<!-- TAREA 1 -->
-<div id="screen-tarea1" class="screen">
-  <form id="formAnimal" onsubmit="guardarAnimal(event)" novalidate>
-    <div class="form-section">
-      <div class="form-section-title">Identificación <span class="required-note">(al menos uno obligatorio)</span></div>
-      <div class="field-group">
-        <label class="field-label">Caravana visual</label>
-        <input type="text" class="field-input" id="caravana" placeholder="Ej: PY-2024-0847 o Estrella" autocomplete="off"/>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Chip subcutáneo</label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="chip" placeholder="Ej: 982010001234" autocomplete="off"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('chip')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-        <div class="scanner-ready-hint"><span class="scanner-dot"></span>Tocá este campo y apretá el gatillo del lector</div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Botón SENACSA</label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="botonSenacsa" placeholder="Ej: 858000123456" autocomplete="off"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('botonSenacsa')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-      </div>
-      <div id="id-error" class="field-error" style="display:none">Completá al menos un identificador</div>
-    </div>
-
-    <div class="form-section">
-      <div class="form-section-title">Datos del animal</div>
-      <div class="field-row2">
-        <div class="field-group">
-          <label class="field-label">Sexo <span class="req">*</span></label>
-          <div class="btn-group" id="sexoGroup">
-            <button type="button" class="opt-btn" data-val="Macho" onclick="selectOpt('sexoGroup',this);actualizarCamposSexo()">Macho</button>
-            <button type="button" class="opt-btn" data-val="Hembra" onclick="selectOpt('sexoGroup',this);actualizarCamposSexo()">Hembra</button>
-          </div>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Color <button type="button" class="btn-gestionar-lista" onclick="abrirGestionLista('colores')">Editar</button></label>
-          <select class="field-input" id="color"><option value="">— Seleccioná —</option></select>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Categoría <span class="req">*</span></label>
-        <select class="field-input" id="categoria">
-          <option value="">— Seleccioná —</option>
-          <option>Vaca</option><option>Vaquilla</option><option>Novillo</option><option>Toro</option>
-          <option>Desmamante Macho</option><option>Desmamante Hembra</option><option>Ternero macho</option><option>Ternero hembra</option>
+      <div class="form-group">
+        <label>Vía de aplicación</label>
+        <select id="sanVia">
+          <option value="SC">SC — Subcutánea</option>
+          <option value="IM">IM — Intramuscular</option>
+          <option value="IV">IV — Intravenosa</option>
+          <option value="PO">PO — Oral</option>
+          <option value="Pour-on">Pour-on</option>
         </select>
       </div>
-      <div class="field-group">
-        <label class="field-label">Raza <button type="button" class="btn-gestionar-lista" onclick="abrirGestionLista('razas')">Editar</button></label>
-        <select class="field-input" id="raza"><option value="">— Seleccioná —</option></select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Carimbo <span style="font-size:11px;font-weight:400;color:var(--text-faint)">(0–9, dejar sin marcar si no aplica)</span></label>
-        <div class="carimbo-grid" id="carimboGroup">
-          <button type="button" class="carimbo-btn" data-val="0" onclick="selectCarimbo(this)">0</button>
-          <button type="button" class="carimbo-btn" data-val="1" onclick="selectCarimbo(this)">1</button>
-          <button type="button" class="carimbo-btn" data-val="2" onclick="selectCarimbo(this)">2</button>
-          <button type="button" class="carimbo-btn" data-val="3" onclick="selectCarimbo(this)">3</button>
-          <button type="button" class="carimbo-btn" data-val="4" onclick="selectCarimbo(this)">4</button>
-          <button type="button" class="carimbo-btn" data-val="5" onclick="selectCarimbo(this)">5</button>
-          <button type="button" class="carimbo-btn" data-val="6" onclick="selectCarimbo(this)">6</button>
-          <button type="button" class="carimbo-btn" data-val="7" onclick="selectCarimbo(this)">7</button>
-          <button type="button" class="carimbo-btn" data-val="8" onclick="selectCarimbo(this)">8</button>
-          <button type="button" class="carimbo-btn" data-val="9" onclick="selectCarimbo(this)">9</button>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Potrero</label>
-        <input type="text" class="field-input" id="potrero" placeholder="Ej: Potrero A"/>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Origen <span class="req">*</span></label>
-        <div class="btn-group" id="origenGroup">
-          <button type="button" class="opt-btn" data-val="Criollo" onclick="selectOpt('origenGroup',this);actualizarCamposOrigen()">Criollo</button>
-          <button type="button" class="opt-btn" data-val="Comprado" onclick="selectOpt('origenGroup',this);actualizarCamposOrigen()">Comprado</button>
-        </div>
-      </div>
-      <div id="campoVendedor" class="field-group" style="display:none">
-        <label class="field-label">Comprado a (vendedor)</label>
-        <input type="text" class="field-input" id="vendedor" placeholder="Nombre del vendedor o establecimiento"/>
-      </div>
     </div>
-
-    <div class="form-section" id="seccionReproductivo" style="display:none">
-      <div class="form-section-title" id="titleReproductivo">Estado reproductivo</div>
-      <div id="grupoReproductivo"></div>
+    <div class="form-group">
+      <label>Lote / N° de frasco</label>
+      <input id="sanLote" type="text" placeholder="Lote del producto" autocomplete="off" inputmode="numeric">
     </div>
-
-    <div class="form-section">
-      <div class="field-group">
-        <label class="field-label">Observaciones</label>
-        <textarea class="field-input" id="obsAnimal" rows="2" placeholder="Notas adicionales..."></textarea>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn-primary" id="btnSubmitAnimal">Guardar registro</button>
-    </div>
-  </form>
-</div>
-
-<!-- TAREA 2 -->
-<div id="screen-tarea2" class="screen">
-  <form id="formPeso" onsubmit="guardarPeso(event)" novalidate>
-    <div class="form-section">
-      <div class="form-section-title">Identificar animal</div>
-      <div class="field-group">
-        <label class="field-label">Identificador <span class="req">*</span></label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="pesoId" placeholder="Chip, caravana o botón..." autocomplete="off" oninput="buscarAnimalSugerencia('pesoId','pesoSugg')"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('pesoId')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-        <div id="pesoSugg" class="sugg-box" style="display:none"></div>
-        <div id="pesoAnimalInfo" class="animal-found-card" style="display:none"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">Datos del pesaje</div>
-      <div class="field-group">
-        <label class="field-label">Peso (kg) <span class="req">*</span></label>
-        <input type="number" class="field-input peso-grande" id="pesoKg" placeholder="0" min="0" max="1500" step="0.5"/>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Fecha <span class="req">*</span></label>
-        <input type="date" class="field-input" id="pesoFecha"/>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Observaciones</label>
-        <textarea class="field-input" id="obsPeso" rows="2" placeholder="Ej: ayunado, condición corporal..."></textarea>
-      </div>
-    </div>
-    <div class="form-actions"><button type="submit" class="btn-primary">Guardar pesaje</button></div>
-  </form>
-</div>
-
-<!-- TAREA 3 -->
-<div id="screen-tarea3" class="screen">
-  <form id="formDiag" onsubmit="guardarDiag(event)" novalidate>
-    <div class="form-section">
-      <div class="form-section-title">Identificar animal</div>
-      <div class="field-group">
-        <label class="field-label">Identificador <span class="req">*</span></label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="diagId" placeholder="Chip, caravana o botón..." autocomplete="off" oninput="buscarAnimalSugerencia('diagId','diagSugg')"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('diagId')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-        <div id="diagSugg" class="sugg-box" style="display:none"></div>
-        <div id="diagAnimalInfo" class="animal-found-card" style="display:none"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">Diagnóstico</div>
-      <div class="field-group">
-        <label class="field-label">Resultado <span class="req">*</span></label>
-        <div class="diag-grid" id="diagGroup">
-          <button type="button" class="diag-btn preñada" data-val="Preñada grande" onclick="selectOpt('diagGroup',this)"><span class="diag-icon">🔵</span><span class="diag-lbl">Preñada grande</span></button>
-          <button type="button" class="diag-btn preñada" data-val="Preñada media" onclick="selectOpt('diagGroup',this)"><span class="diag-icon">🟡</span><span class="diag-lbl">Preñada media</span></button>
-          <button type="button" class="diag-btn preñada" data-val="Preñada chica" onclick="selectOpt('diagGroup',this)"><span class="diag-icon">🟠</span><span class="diag-lbl">Preñada chica</span></button>
-          <button type="button" class="diag-btn vacia" data-val="Vacía" onclick="selectOpt('diagGroup',this)"><span class="diag-icon">⚪</span><span class="diag-lbl">Vacía</span></button>
-        </div>
-        <div id="diagMachoWarning" style="display:none;padding:12px;background:#FAEEDA;border-radius:10px;font-size:13px;color:#BA7517;border:1px solid rgba(186,117,23,0.2);margin-top:4px">⚠️ El animal seleccionado es Macho. El diagnóstico de gestación no aplica.</div>
-        <div id="diag-error" class="field-error" style="display:none">Seleccioná un diagnóstico</div>
-      </div>
-      <div class="field-row2">
-        <div class="field-group"><label class="field-label">Fecha <span class="req">*</span></label><input type="date" class="field-input" id="diagFecha"/></div>
-        <div class="field-group"><label class="field-label">Responsable</label><input type="text" class="field-input" id="diagVet" placeholder="Veterinario"/></div>
-      </div>
-      <div class="field-group"><label class="field-label">Observaciones</label><textarea class="field-input" id="obsDiag" rows="2" placeholder="Mellizos, parto probable..."></textarea></div>
-    </div>
-    <div class="form-actions"><button type="submit" class="btn-primary">Guardar diagnóstico</button></div>
-  </form>
-</div>
-
-<!-- TAREA 5: BAJA -->
-<div id="screen-tarea5" class="screen">
-  <form id="formBaja" onsubmit="guardarBaja(event)" novalidate>
-    <div class="form-section">
-      <div class="form-section-title">Identificar animal</div>
-      <div class="field-group">
-        <label class="field-label">Identificador <span class="req">*</span></label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="bajaId" placeholder="Chip, caravana o botón..." autocomplete="off" oninput="buscarAnimalSugerencia('bajaId','bajaSugg')"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('bajaId')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-        <div id="bajaSugg" class="sugg-box" style="display:none"></div>
-        <div id="bajaAnimalInfo" class="animal-found-card" style="display:none"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">Motivo de baja</div>
-      <div class="field-group">
-        <label class="field-label">Tipo <span class="req">*</span></label>
-        <div class="btn-group" id="bajaTipoGroup">
-          <button type="button" class="opt-btn" data-val="Venta" onclick="selectOpt('bajaTipoGroup',this);actualizarCamposBaja()">Venta</button>
-          <button type="button" class="opt-btn" data-val="Muerte" onclick="selectOpt('bajaTipoGroup',this);actualizarCamposBaja()">Muerte</button>
-        </div>
-      </div>
-      <div id="campoCausaMuerte" class="field-group" style="display:none">
-        <label class="field-label">Causa de muerte</label>
-        <select class="field-input" id="causaMuerte" onchange="document.getElementById('causaMuerteOtra').style.display=this.value==='Otra'?'block':'none'">
-          <option value="">— Seleccioná —</option>
-          <option>Enfermedad</option><option>Accidente</option><option>Parto</option>
-          <option>Predador</option><option>Causa desconocida</option><option>Otra</option>
-        </select>
-        <input type="text" class="field-input" id="causaMuerteOtra" placeholder="Especificá la causa..." style="margin-top:6px;display:none"/>
-      </div>
-      <div id="campoComprador" class="field-group" style="display:none">
-        <label class="field-label">Comprador / Destino</label>
-        <input type="text" class="field-input" id="comprador" placeholder="Nombre del comprador o frigorífico"/>
-      </div>
-      <div class="field-row2">
-        <div class="field-group"><label class="field-label">Fecha <span class="req">*</span></label><input type="date" class="field-input" id="bajaFecha"/></div>
-        <div class="field-group" id="campoPrecioBaja" style="display:none"><label class="field-label">Precio (Gs.)</label><input type="number" class="field-input" id="precioBaja" placeholder="0" min="0"/></div>
-      </div>
-      <div class="field-group"><label class="field-label">Observaciones</label><textarea class="field-input" id="obsBaja" rows="2" placeholder="Detalles adicionales..."></textarea></div>
-    </div>
-    <div class="form-actions"><button type="submit" class="btn-primary" style="background:#A32D2D">Registrar baja</button></div>
-  </form>
-</div>
-
-<!-- TAREA 6: SANITARIOS / VACUNACIÓN -->
-<div id="screen-tarea6" class="screen">
-  <form id="formSanitario" onsubmit="guardarSanitario(event)" novalidate>
-    <div class="form-section">
-      <div class="form-section-title">Identificar animal</div>
-      <div class="field-group">
-        <label class="field-label">Identificador <span class="req">*</span></label>
-        <div class="input-row">
-          <input type="text" class="field-input" id="sanitarioId" placeholder="Chip, caravana o botón..." autocomplete="off" oninput="buscarAnimalSugerencia('sanitarioId','sanitarioSugg')"/>
-          <button type="button" class="btn-nfc" onclick="leerNFC('sanitarioId')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 6-6M15 9a6 6 0 0 1-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="currentColor"/><path d="M6 5.5A5 5 0 0 1 14 9M12 12.5A5 5 0 0 1 4 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
-        </div>
-        <div id="sanitarioSugg" class="sugg-box" style="display:none"></div>
-        <div id="sanitarioAnimalInfo" class="animal-found-card" style="display:none"></div>
-      </div>
-    </div>
-    <div class="form-section">
-      <div class="form-section-title">Datos del sanitario</div>
-      <div class="field-group">
-        <label class="field-label">Producto <span class="req">*</span></label>
-        <input type="text" class="field-input" id="sanProducto" placeholder="Nombre del producto o vacuna..."/>
-      </div>
-      <div class="field-row2">
-        <div class="field-group">
-          <label class="field-label">Dosis (ml)</label>
-          <input type="number" class="field-input" id="sanDosis" placeholder="0" min="0" step="0.1"/>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Lote</label>
-          <input type="text" class="field-input" id="sanLote" placeholder="N° de lote"/>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Vía de aplicación</label>
-        <div class="btn-group-wrap" id="sanViaGroup">
-          <button type="button" class="opt-btn-sm" data-val="SC" onclick="selectOptSm('sanViaGroup',this)">SC</button>
-          <button type="button" class="opt-btn-sm" data-val="IM" onclick="selectOptSm('sanViaGroup',this)">IM</button>
-          <button type="button" class="opt-btn-sm" data-val="IV" onclick="selectOptSm('sanViaGroup',this)">IV</button>
-          <button type="button" class="opt-btn-sm" data-val="PO" onclick="selectOptSm('sanViaGroup',this)">PO</button>
-          <button type="button" class="opt-btn-sm" data-val="Pour-on" onclick="selectOptSm('sanViaGroup',this)">Pour-on</button>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Fecha <span class="req">*</span></label>
-        <input type="date" class="field-input" id="sanitarioFecha"/>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Comentario</label>
-        <textarea class="field-input" id="obsSanitario" rows="2" placeholder="Notas adicionales..."></textarea>
-      </div>
-    </div>
-    <div class="form-actions"><button type="submit" class="btn-primary" style="background:#1A7A6E">Guardar sanitario</button></div>
-  </form>
-</div>
-
-<!-- LISTA -->
-<div id="screen-lista" class="screen">
-  <div class="list-toolbar">
-    <input type="search" class="search-input" placeholder="Buscar por nombre, chip, caravana..." oninput="filtrarAnimales(this.value)"/>
-    <div class="toolbar-actions">
-      <button class="toolbar-btn import-btn" onclick="document.getElementById('importFileInput').click()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 4 3-4M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Animales
-      </button>
-      <button class="toolbar-btn" style="background:#E6F5F3;color:#1A7A6E;border-color:#b2ddd8" onclick="document.getElementById('importEventosInput').click()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 4 3-4M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Eventos
-      </button>
-      <button class="toolbar-btn template-btn" onclick="descargarTemplate()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Plantilla
-      </button>
-    </div>
-    <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarExcel(this)"/>
-    <input type="file" id="importEventosInput" accept=".xlsx,.xls" style="display:none" onchange="importarEventosExcel(this)"/>
   </div>
-  <div id="listaContent"></div>
+
+  <hr>
+  <button class="btn btn-primary" onclick="createSession()">CREAR SESIÓN</button>
+  <button class="btn btn-outline" onclick="goHome()">CANCELAR</button>
 </div>
 
-<!-- DETALLE -->
-<div id="screen-detalle" class="screen"><div id="detalleContent"></div></div>
+<!-- ════════════════════════════════════
+     PANTALLA: DETALLE DE SESIÓN
+     ════════════════════════════════════ -->
+<div id="screenSession" class="screen">
+  <div class="session-box" id="sessBox"></div>
+  <div id="treatBox"></div>
+
+  <!-- Área de ingreso -->
+  <div class="input-area">
+    <div class="input-area-title" id="inputTitle">Registrar animal</div>
+    <div id="inputFields"></div>
+    <button class="btn btn-primary" onclick="addRecord()">+ REGISTRAR ANIMAL</button>
+  </div>
+
+  <!-- Resumen pesaje (solo para sesiones de pesaje) -->
+  <div id="pesajeSummary" style="display:none"></div>
+
+  <!-- Resumen (pesaje/preñez) -->
+  <div id="pesajeSummary" style="display:none"></div>
+
+  <!-- Lista de registros -->
+  <p class="section-label" id="recLabel">REGISTROS</p>
+  <div id="recList"></div>
+
+  <hr>
+  <button class="btn btn-success" onclick="exportExcel()">↓ EXPORTAR EXCEL</button>
+  <button class="btn btn-danger" onclick="deleteSession()">✕ ELIMINAR SESIÓN</button>
+</div>
 
 <!-- TOAST -->
-<div id="toast" class="toast"></div>
+<div class="toast" id="toast"></div>
 
-<!-- MODAL: GESTIONAR LISTAS -->
-<div id="gestionOverlay" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.5);align-items:flex-end" onclick="cerrarGestionLista()">
-  <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-height:72vh;display:flex;flex-direction:column;font-family:var(--ff)" onclick="event.stopPropagation()">
-    <div style="padding:16px;border-bottom:0.5px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:16px;font-weight:600;color:#1a1a18" id="gestionTitulo">Gestionar lista</div>
-      <button onclick="cerrarGestionLista()" style="background:none;border:none;font-size:22px;color:#8a8a84;cursor:pointer;line-height:1">✕</button>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATABASE — IndexedDB
+   ═══════════════════════════════════════════════════════════ */
+const DB_NAME = 'tigga_corral_v1';
+let db, currentSessId = null;
+
+function initDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('sessions')) {
+        d.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true })
+         .createIndex('createdAt', 'createdAt');
+      }
+      if (!d.objectStoreNames.contains('records')) {
+        d.createObjectStore('records', { keyPath: 'id', autoIncrement: true })
+         .createIndex('sessionId', 'sessionId');
+      }
+    };
+    r.onsuccess = e => { db = e.target.result; res(); };
+    r.onerror = e => rej(e.target.error);
+  });
+}
+
+const tx = (store, mode = 'readonly') => db.transaction(store, mode).objectStore(store);
+
+function dbAdd(store, obj) {
+  return new Promise((res, rej) => {
+    const r = tx(store, 'readwrite').add(obj);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGet(store, id) {
+  return new Promise((res, rej) => {
+    const r = tx(store).get(id);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const r = tx(store).getAll();
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbGetByIdx(store, idx, val) {
+  return new Promise((res, rej) => {
+    const r = tx(store).index(idx).getAll(val);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function dbDel(store, id) {
+  return new Promise((res, rej) => {
+    const r = tx(store, 'readwrite').delete(id);
+    r.onsuccess = () => res();
+    r.onerror = () => rej(r.error);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function setHeaderAction(html) {
+  document.getElementById('headerAction').innerHTML = html;
+}
+
+function goHome() {
+  setHeaderAction('');
+  showScreen('screenHome');
+  loadHome();
+}
+
+function goNewSession() {
+  document.getElementById('newName').value = '';
+  document.getElementById('newType').value = '';
+  document.getElementById('sanFields').style.display = 'none';
+  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
+  showScreen('screenNew');
+}
+
+function goSession(id) {
+  currentSessId = id;
+  setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
+  showScreen('screenSession');
+  loadSession(id);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOME
+   ═══════════════════════════════════════════════════════════ */
+async function loadHome() {
+  const sessions = await dbGetAll('sessions');
+  const allRecs = await dbGetAll('records');
+  const cntMap = {};
+  allRecs.forEach(r => { cntMap[r.sessionId] = (cntMap[r.sessionId] || 0) + 1; });
+
+  sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const TYPE_LABEL = { pesaje:'PESAJE', servicio:'SERVICIO', prenez:'PREÑEZ', sanitacion:'SANITACIÓN', venta:'VENTA/AUD.', mortandad:'MORTANDAD' };
+  const container = document.getElementById('sessionList');
+
+  if (!sessions.length) {
+    container.innerHTML = `<div class="empty"><div class="icon">🐄</div><p>No hay sesiones.<br>Tocá <strong>+</strong> para crear una.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = sessions.map(s => `
+    <div class="session-card" onclick="goSession(${s.id})">
+      <div class="session-name">${esc(s.name)}</div>
+      <div class="session-meta">${fmtDate(s.date)} &nbsp;·&nbsp; ${cntMap[s.id] || 0} animales</div>
+      <span class="tag tag-${s.type}">${TYPE_LABEL[s.type]}</span>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:8px 16px" id="gestionItems"></div>
-    <div style="padding:12px 16px 28px;border-top:0.5px solid rgba(0,0,0,0.1)">
-      <div style="display:flex;gap:8px">
-        <input type="text" class="field-input" id="gestionNuevo" placeholder="Agregar nuevo..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarItemLista()}"/>
-        <button onclick="agregarItemLista()" style="padding:9px 18px;background:#3B6D11;color:#EAF3DE;border:none;border-radius:8px;font-family:var(--ff);font-weight:600;cursor:pointer">+ Agregar</button>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEW SESSION
+   ═══════════════════════════════════════════════════════════ */
+function onTypeChange() {
+  document.getElementById('sanFields').style.display =
+    document.getElementById('newType').value === 'sanitacion' ? 'block' : 'none';
+}
+
+async function createSession() {
+  const name = document.getElementById('newName').value.trim();
+  const type = document.getElementById('newType').value;
+  if (!name) { toast('Ingresá un nombre de sesión', true); return; }
+  if (!type) { toast('Seleccioná el tipo de tarea', true); return; }
+
+  const sess = { name, type, date: todayDate(), createdAt: new Date().toISOString(), meta: {} };
+
+  if (type === 'sanitacion') {
+    const producto = document.getElementById('sanProducto').value.trim();
+    if (!producto) { toast('Ingresá el producto', true); return; }
+    sess.meta = {
+      producto,
+      dosis: document.getElementById('sanDosis').value || '',
+      via: document.getElementById('sanVia').value,
+      lote: document.getElementById('sanLote').value.trim()
+    };
+  }
+
+  const id = await dbAdd('sessions', sess);
+  goSession(id);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SESSION DETAIL
+   ═══════════════════════════════════════════════════════════ */
+const TYPE_FULLNAME = {
+  pesaje: 'PESAJE',
+  servicio: 'SERVICIO',
+  prenez: 'DIAGNÓSTICO DE PREÑEZ',
+  sanitacion: 'SANITACIÓN / VACUNACIÓN',
+  venta: 'VENTA / AUDITORÍA',
+  mortandad: 'MORTANDAD'
+};
+
+async function loadSession(id) {
+  const sess = await dbGet('sessions', id);
+  const recs = await dbGetByIdx('records', 'sessionId', id);
+
+  // Header box
+  const countLabel = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
+  document.getElementById('sessBox').innerHTML = `
+    <h2>${esc(sess.name)}</h2>
+    <div class="meta">${fmtDate(sess.date)} &nbsp;·&nbsp; ${TYPE_FULLNAME[sess.type]}</div>
+    <span class="count-chip">${recs.length} ${countLabel}</span>
+  `;
+
+  // Treat box (sanitacion only)
+  const tb = document.getElementById('treatBox');
+  if (sess.type === 'sanitacion' && sess.meta.producto) {
+    tb.innerHTML = `
+      <div class="treat-box">
+        <div class="treat-label">Producto</div>
+        <div class="treat-value">${esc(sess.meta.producto)}</div>
+        <div class="treat-row" style="margin-top:6px">
+          <div class="treat-item"><div class="treat-label">Dosis</div><div class="treat-value">${esc(sess.meta.dosis)} ml</div></div>
+          <div class="treat-item"><div class="treat-label">Vía</div><div class="treat-value">${esc(sess.meta.via)}</div></div>
+          <div class="treat-item"><div class="treat-label">Lote</div><div class="treat-value">${esc(sess.meta.lote || '—')}</div></div>
+        </div>
+      </div>`;
+    tb.style.display = 'block';
+  } else {
+    tb.innerHTML = '';
+  }
+
+  buildInputArea(sess.type);
+  renderRecords(recs, sess);
+}
+
+/* ── Input area per task type ── */
+function buildInputArea(type) {
+  const TITLES = {
+    pesaje: 'Registrar pesaje',
+    servicio: 'Registrar servicio',
+    prenez: 'Registrar diagnóstico',
+    sanitacion: 'Confirmar animal tratado',
+    venta: 'Registrar animal',
+    mortandad: 'Registrar baja'
+  };
+  document.getElementById('inputTitle').textContent = TITLES[type];
+
+  let html = `
+    <div class="form-group">
+      <label>ID Animal — chip RFID o caravana</label>
+      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric" style="font-size:20px;font-weight:700;padding:16px 12px;">
+    </div>`;
+
+  if (type === 'pesaje') {
+    html += `
+      <div class="form-group">
+        <label>Peso (kg)</label>
+        <input id="fPeso" type="number" placeholder="0.0" step="0.1" min="0" inputmode="decimal">
+      </div>`;
+  } else if (type === 'servicio') {
+    html += `
+      <div class="form-group">
+        <label>Tipo de servicio</label>
+        <select id="fTipoSrv">
+          <option value="MN">Monta Natural</option>
+          <option value="IA">Inseminación Artificial</option>
+          <option value="TE">Transferencia de Embrión</option>
+        </select>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- IMPORT PROGRESS -->
-<div id="importProgress" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:16px;padding:28px 24px;width:80%;max-width:320px;text-align:center;font-family:var(--ff)">
-    <div style="font-size:28px;margin-bottom:12px">⏳</div>
-    <div style="font-size:15px;font-weight:600;color:#1a1a18" id="importProgressText">Procesando...</div>
-  </div>
-</div>
-
-<!-- IMPORT RESULT -->
-<div id="importResult" style="display:none;position:fixed;inset:0;z-index:401;background:rgba(0,0,0,0.5);align-items:flex-end">
-  <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;padding:24px 16px 32px;font-family:var(--ff)" onclick="event.stopPropagation()">
-    <div style="font-size:18px;font-weight:600;color:#1a1a18;margin-bottom:16px" id="importResultTitle">Importación completada</div>
-    <div id="importResultBody"></div>
-    <button onclick="document.getElementById('importResult').style.display='none'" style="width:100%;padding:13px;background:#3B6D11;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:var(--ff);margin-top:16px;cursor:pointer">Listo</button>
-  </div>
-</div>
-
-<!-- EXPORT MENU -->
-<div id="exportOverlay" class="overlay" onclick="closeExportMenu()" style="display:none">
-  <div class="export-sheet" onclick="event.stopPropagation()">
-    <div class="export-title">Exportar / Compartir</div>
-
-    <!-- TAREAS -->
-    <div style="font-size:11px;font-weight:600;color:#8a8a84;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Seleccioná qué exportar</div>
-    <div class="export-tareas-grid">
-      <label class="export-tarea-check"><input type="checkbox" id="expAnimales" checked/><span>🐄 Animales</span></label>
-      <label class="export-tarea-check"><input type="checkbox" id="expPesajes" checked/><span>⚖️ Pesajes</span></label>
-      <label class="export-tarea-check"><input type="checkbox" id="expDiags" checked/><span>🔍 Diagnósticos</span></label>
-      <label class="export-tarea-check"><input type="checkbox" id="expBajas" checked/><span>📤 Bajas</span></label>
-      <label class="export-tarea-check"><input type="checkbox" id="expSanitarios" checked/><span>💉 Sanitarios</span></label>
-    </div>
-
-    <!-- FILTRO FECHA -->
-    <div style="font-size:11px;font-weight:600;color:#8a8a84;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px">Período</div>
-    <div class="export-fecha-grid" id="exportFechaGroup">
-      <button class="export-fecha-btn selected" data-val="todo" onclick="selectFechaExport(this)">Todo</button>
-      <button class="export-fecha-btn" data-val="hoy" onclick="selectFechaExport(this)">Hoy</button>
-      <button class="export-fecha-btn" data-val="ayer" onclick="selectFechaExport(this)">Ayer</button>
-      <button class="export-fecha-btn" data-val="semana" onclick="selectFechaExport(this)">Última semana</button>
-      <button class="export-fecha-btn" data-val="mes" onclick="selectFechaExport(this)">Este mes</button>
-      <button class="export-fecha-btn" data-val="rango" onclick="selectFechaExport(this)">Rango libre</button>
-    </div>
-    <div id="exportRangoLibre" style="display:none;margin-top:10px;display:none">
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex:1"><label style="font-size:11px;color:#8a8a84;display:block;margin-bottom:3px">Desde</label><input type="date" class="field-input" id="exportDesde" style="font-size:13px"/></div>
-        <div style="flex:1"><label style="font-size:11px;color:#8a8a84;display:block;margin-bottom:3px">Hasta</label><input type="date" class="field-input" id="exportHasta" style="font-size:13px"/></div>
+      <div class="form-group">
+        <label>Toro / Semental / Donante</label>
+        <input id="fToro" type="text" placeholder="ID o nombre del macho" autocomplete="off" inputmode="numeric">
       </div>
-    </div>
+      <div class="form-group">
+        <label>Observación (opcional)</label>
+        <input id="fObs" type="text" placeholder="" autocomplete="off">
+      </div>`;
+  } else if (type === 'prenez') {
+    html += `
+      <div class="form-group">
+        <label>Resultado — seleccioná una opción</label>
+        <div class="prenez-grid">
+          <button type="button" class="prenez-btn" data-val="Preñada Grande"  data-cls="selected-pg"   onclick="selectPrenez(this)">Preñada<br>Grande</button>
+          <button type="button" class="prenez-btn" data-val="Preñada Mediana" data-cls="selected-pm"   onclick="selectPrenez(this)">Preñada<br>Mediana</button>
+          <button type="button" class="prenez-btn" data-val="Preñada Chica"   data-cls="selected-pc"   onclick="selectPrenez(this)">Preñada<br>Chica</button>
+          <button type="button" class="prenez-btn" data-val="Preñada CUT"     data-cls="selected-pcut" onclick="selectPrenez(this)">Preñada<br>CUT</button>
+          <button type="button" class="prenez-btn" data-val="Vacía Buena"     data-cls="selected-vb"   onclick="selectPrenez(this)">Vacía<br>Buena</button>
+          <button type="button" class="prenez-btn" data-val="Vacía Descarte"  data-cls="selected-vd"   onclick="selectPrenez(this)">Vacía<br>Descarte</button>
+        </div>
+        <input type="hidden" id="fResultado" value="">
+      </div>`;
+  } else if (type === 'mortandad') {
+    html += `
+      <div class="form-group">
+        <label>Causa</label>
+        <select id="fCausa">
+          <option value="Enfermedad">Enfermedad</option>
+          <option value="Accidente">Accidente</option>
+          <option value="Depredador">Depredador</option>
+          <option value="Problema de Parto">Problema de Parto</option>
+          <option value="Causa Desconocida">Causa Desconocida</option>
+          <option value="Otra">Otra</option>
+        </select>
+      </div>`;
+  }
+  // sanitacion y venta: solo ID
 
-    <!-- BOTONES EXPORT -->
-    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn-export-excel" onclick="exportarExcel()">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        Descargar Excel (.xlsx)
-      </button>
-      <button class="export-opt whatsapp-btn" onclick="compartirResumenWhatsApp()">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C5.6 2 2 5.6 2 10c0 1.5.4 2.9 1.1 4.1L2 18l4-1.1C7.2 17.6 8.6 18 10 18c4.4 0 8-3.6 8-8s-3.6-8-8-8z" stroke="currentColor" stroke-width="1.6"/></svg>
-        Compartir resumen por WhatsApp
-      </button>
-    </div>
+  // Comentario — campo universal opcional
+  html += `
+    <div class="form-group" style="margin-top:4px">
+      <label>Comentario (opcional)</label>
+      <input id="fComentario" type="text" placeholder="Observación libre..." autocomplete="off">
+    </div>`;
 
-    <div style="border-top:0.5px solid rgba(0,0,0,0.1);margin:14px 0 4px;padding-top:10px;font-size:11px;font-weight:600;color:#8a8a84;text-transform:uppercase;letter-spacing:.06em">Importar</div>
-    <button class="export-opt" onclick="closeExportMenu();document.getElementById('importFileInput').click()"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 10l4 5 4-5M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Importar desde Excel/CSV</button>
-    <button class="export-opt" onclick="closeExportMenu();descargarTemplate()"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Descargar plantilla Excel</button>
-    <button class="export-cancel" onclick="closeExportMenu()">Cancelar</button>
+  document.getElementById('inputFields').innerHTML = html;
+  setTimeout(() => { const f = document.getElementById('fAnimalId'); if (f) f.focus(); }, 80);
+}
+
+/* ── Add record ── */
+async function addRecord() {
+  const sess = await dbGet('sessions', currentSessId);
+  const animalId = document.getElementById('fAnimalId').value.trim();
+  if (!animalId) { toast('Ingresá el ID del animal', true); return; }
+
+  const rec = { sessionId: currentSessId, animalId, ts: new Date().toISOString(), data: {} };
+
+  if (sess.type === 'pesaje') {
+    const peso = document.getElementById('fPeso').value;
+    if (!peso) { toast('Ingresá el peso', true); return; }
+    rec.data = { peso: parseFloat(peso) };
+  } else if (sess.type === 'servicio') {
+    rec.data = {
+      tipo: document.getElementById('fTipoSrv').value,
+      toro: document.getElementById('fToro').value.trim(),
+      obs: document.getElementById('fObs').value.trim()
+    };
+  } else if (sess.type === 'prenez') {
+    const resultado = document.getElementById('fResultado').value;
+    if (!resultado) { toast('Seleccioná un resultado', true); return; }
+    rec.data = { resultado };
+  } else if (sess.type === 'mortandad') {
+    rec.data = {
+      causa: document.getElementById('fCausa').value
+    };
+  }
+  // venta y sanitacion: solo ID
+
+  // Comentario universal
+  const comentario = document.getElementById('fComentario');
+  if (comentario) rec.data.comentario = comentario.value.trim();
+
+  await dbAdd('records', rec);
+  toast('✓ Animal registrado');
+
+  document.getElementById('fAnimalId').value = '';
+  if (sess.type === 'pesaje') document.getElementById('fPeso').value = '';
+  if (sess.type === 'prenez') {
+    document.querySelectorAll('.prenez-btn').forEach(b => b.className = 'prenez-btn');
+    document.getElementById('fResultado').value = '';
+  }
+  if (comentario) comentario.value = '';
+  document.getElementById('fAnimalId').focus();
+
+  await loadSession(currentSessId);
+}
+
+/* ── Preñez summary ── */
+function renderPrenezSummary(recs) {
+  const box = document.getElementById('pesajeSummary'); // reuse same container
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const CATS = [
+    { key: 'Preñada Grande',  label: 'Preñada Grande',  cls: 'bar-pg',   dot: '#2e8b57' },
+    { key: 'Preñada Mediana', label: 'Preñada Mediana', cls: 'bar-pm',   dot: '#5ab878' },
+    { key: 'Preñada Chica',   label: 'Preñada Chica',   cls: 'bar-pc',   dot: '#98dba8' },
+    { key: 'Preñada CUT',     label: 'Preñada CUT',     cls: 'bar-pcut', dot: '#c8f0d2' },
+    { key: 'Vacía Buena',     label: 'Vacía Buena',     cls: 'bar-vb',   dot: '#888' },
+    { key: 'Vacía Descarte',  label: 'Vacía Descarte',  cls: 'bar-vd',   dot: '#444' },
+  ];
+
+  const total = recs.length;
+  const counts = {};
+  CATS.forEach(c => counts[c.key] = 0);
+  recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
+
+  const totalPrenadas = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT']
+    .reduce((s, k) => s + counts[k], 0);
+  const totalVacias = ['Vacía Buena','Vacía Descarte']
+    .reduce((s, k) => s + counts[k], 0);
+
+  const pct = n => total > 0 ? ((n / total) * 100).toFixed(1) + '%' : '—';
+
+  const barSegs = CATS.map(c => {
+    const w = total > 0 ? ((counts[c.key] / total) * 100).toFixed(2) : 0;
+    return `<div class="bar-seg ${c.cls}" style="width:${w}%"></div>`;
+  }).join('');
+
+  const catRows = CATS.map(c => `
+    <div class="cat-row">
+      <div class="cat-dot" style="background:${c.dot}"></div>
+      <div class="cat-name">${c.label}</div>
+      <div class="cat-count">${counts[c.key]}</div>
+      <div class="cat-pct">${pct(counts[c.key])}</div>
+    </div>`).join('');
+
+  box.innerHTML = `
+    <div class="prenez-summary">
+      <div class="prenez-summary-title">▸ Resumen de diagnóstico</div>
+      <div class="prenez-totals">
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Total</div>
+          <div class="prenez-total-value">${total}</div>
+        </div>
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Preñadas</div>
+          <div class="prenez-total-value" style="color:#5ab878">${totalPrenadas}</div>
+          <div class="prenez-total-pct">${pct(totalPrenadas)}</div>
+        </div>
+        <div class="prenez-total-cell">
+          <div class="prenez-total-label">Vacías</div>
+          <div class="prenez-total-value" style="color:#888">${totalVacias}</div>
+          <div class="prenez-total-pct">${pct(totalVacias)}</div>
+        </div>
+      </div>
+      <div class="prenez-bar-wrap">
+        <div class="prenez-bar">${barSegs}</div>
+      </div>
+      <div class="prenez-cats">${catRows}</div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Prenez button selector ── */
+function selectPrenez(btn) {
+  document.querySelectorAll('.prenez-btn').forEach(b => b.className = 'prenez-btn');
+  btn.classList.add(btn.dataset.cls);
+  document.getElementById('fResultado').value = btn.dataset.val;
+}
+
+/* ── Pesaje summary ── */
+function renderPesajeSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
+  if (!pesos.length) { box.style.display = 'none'; return; }
+
+  const total  = pesos.length;
+  const suma   = pesos.reduce((a, b) => a + b, 0);
+  const prom   = (suma / total).toFixed(1);
+  const minP   = Math.min(...pesos).toFixed(1);
+  const maxP   = Math.max(...pesos).toFixed(1);
+
+  box.innerHTML = `
+    <div class="pesaje-summary">
+      <div class="pesaje-summary-title">▸ Resumen de pesaje</div>
+      <div class="pesaje-stats">
+        <div class="stat-cell">
+          <div class="stat-label">Animales</div>
+          <div class="stat-value">${total}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Promedio</div>
+          <div class="stat-value">${prom} <span class="stat-unit">kg</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Mínimo</div>
+          <div class="stat-value">${minP} <span class="stat-unit">kg</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Máximo</div>
+          <div class="stat-value">${maxP} <span class="stat-unit">kg</span></div>
+        </div>
+      </div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Venta summary ── */
+function renderVentaSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+  box.innerHTML = `
+    <div class="pesaje-summary" style="border-left-color:#e87040">
+      <div class="pesaje-summary-title" style="color:#e87040">▸ Resumen de venta / auditoría</div>
+      <div class="pesaje-stats">
+        <div class="stat-cell">
+          <div class="stat-label">Total animales</div>
+          <div class="stat-value" style="color:#e87040">${recs.length}</div>
+        </div>
+      </div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Mortandad summary ── */
+function renderMortandadSummary(recs) {
+  const box = document.getElementById('pesajeSummary');
+  if (!recs.length) { box.style.display = 'none'; return; }
+
+  const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
+  const counts = {};
+  CAUSAS.forEach(c => counts[c] = 0);
+  recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
+
+  const catRows = CAUSAS
+    .filter(c => counts[c] > 0)
+    .map(c => `
+      <div class="cat-row">
+        <div class="cat-dot" style="background:#c04040"></div>
+        <div class="cat-name">${c}</div>
+        <div class="cat-count">${counts[c]}</div>
+        <div class="cat-pct">${((counts[c]/recs.length)*100).toFixed(1)}%</div>
+      </div>`).join('');
+
+  box.innerHTML = `
+    <div class="pesaje-summary" style="border-left-color:#c04040">
+      <div class="pesaje-summary-title" style="color:#c04040">▸ Resumen de mortandad</div>
+      <div class="pesaje-stats" style="margin-bottom:12px">
+        <div class="stat-cell">
+          <div class="stat-label">Total bajas</div>
+          <div class="stat-value" style="color:#c04040">${recs.length}</div>
+        </div>
+      </div>
+      <div class="prenez-cats">${catRows}</div>
+    </div>`;
+  box.style.display = 'block';
+}
+
+/* ── Render records ── */
+function renderRecords(recs, sess) {
+  const label = sess.type === 'mortandad' ? 'BAJAS' : 'ANIMALES';
+  document.getElementById('recLabel').textContent = `REGISTROS (${recs.length})`;
+  const container = document.getElementById('recList');
+
+  // Summary routing
+  if (sess.type === 'pesaje') {
+    renderPesajeSummary(recs);
+  } else if (sess.type === 'prenez') {
+    renderPrenezSummary(recs);
+  } else if (sess.type === 'venta') {
+    renderVentaSummary(recs);
+  } else if (sess.type === 'mortandad') {
+    renderMortandadSummary(recs);
+  } else {
+    document.getElementById('pesajeSummary').style.display = 'none';
+  }
+
+  if (!recs.length) {
+    container.innerHTML = `<div class="empty" style="padding:30px 20px"><p>Sin registros aún.<br>Ingresá el primer animal arriba.</p></div>`;
+    return;
+  }
+
+  const sorted = [...recs].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+  container.innerHTML = sorted.map(r => {
+    let dataStr = '';
+    if (sess.type === 'pesaje') dataStr = `${r.data.peso} kg`;
+    else if (sess.type === 'servicio') {
+      dataStr = r.data.tipo;
+      if (r.data.toro) dataStr += ` · ${r.data.toro}`;
+      if (r.data.obs) dataStr += ` · ${r.data.obs}`;
+    }
+    else if (sess.type === 'prenez') {
+      dataStr = r.data.resultado;
+      if (r.data.meses && r.data.meses !== '0') dataStr += ` · ${r.data.meses} meses`;
+    }
+    else if (sess.type === 'sanitacion') dataStr = '✓ tratado';
+    else if (sess.type === 'venta')      dataStr = '✓ auditado';
+    else if (sess.type === 'mortandad')  dataStr = r.data.causa || '';
+
+    const comentario = r.data.comentario ? `<div class="record-comment">💬 ${esc(r.data.comentario)}</div>` : '';
+    const time = new Date(r.ts).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+
+    return `
+      <div class="record-item">
+        <div style="min-width:0;flex:1">
+          <div class="record-id">${esc(r.animalId)}</div>
+          <div class="record-data">${esc(dataStr)}</div>
+          ${comentario}
+        </div>
+        <div class="record-right">
+          <span class="record-time">${time}</span>
+          <button class="del-btn" onclick="delRecord(${r.id})">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function delRecord(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  await dbDel('records', id);
+  await loadSession(currentSessId);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT TO EXCEL
+   ═══════════════════════════════════════════════════════════ */
+async function exportExcel() {
+  const sess = await dbGet('sessions', currentSessId);
+  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
+
+  if (!recs.length) { toast('No hay registros para exportar', true); return; }
+
+  const sorted = [...recs].sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  let rows = [];
+
+  if (sess.type === 'pesaje') {
+    rows = sorted.map(r => ({
+      'Sesión':       sess.name,
+      'Fecha':        sess.date,
+      'Hora':         fmtTime(r.ts),
+      'ID Animal':    r.animalId,
+      'Peso (kg)':    r.data.peso,
+      'Comentario':   r.data.comentario || ''
+    }));
+  } else if (sess.type === 'servicio') {
+    rows = sorted.map(r => ({
+      'Sesión':          sess.name,
+      'Fecha':           sess.date,
+      'Hora':            fmtTime(r.ts),
+      'ID Animal':       r.animalId,
+      'Tipo':            r.data.tipo,
+      'Toro/Semental':   r.data.toro,
+      'Observación':     r.data.obs,
+      'Comentario':      r.data.comentario || ''
+    }));
+  } else if (sess.type === 'prenez') {
+    rows = sorted.map(r => ({
+      'Sesión':             sess.name,
+      'Fecha':              sess.date,
+      'Hora':               fmtTime(r.ts),
+      'ID Animal':          r.animalId,
+      'Resultado':          r.data.resultado,
+      'Meses estimados':    r.data.meses,
+      'Comentario':         r.data.comentario || ''
+    }));
+  } else if (sess.type === 'sanitacion') {
+    rows = sorted.map(r => ({
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Producto':    sess.meta.producto,
+      'Dosis (ml)':  sess.meta.dosis,
+      'Vía':         sess.meta.via,
+      'Lote':        sess.meta.lote || '',
+      'Comentario':  r.data.comentario || ''
+    }));
+  } else if (sess.type === 'venta') {
+    rows = sorted.map((r, i) => ({
+      'N°':          i + 1,
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Comentario':  r.data.comentario || ''
+    }));
+  } else if (sess.type === 'mortandad') {
+    rows = sorted.map(r => ({
+      'Sesión':      sess.name,
+      'Fecha':       sess.date,
+      'Hora':        fmtTime(r.ts),
+      'ID Animal':   r.animalId,
+      'Causa':       r.data.causa || '',
+      'Comentario':  r.data.comentario || ''
+    }));
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = Object.keys(rows[0]).map(k => ({
+    wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? '').length)) + 2
+  }));
+
+  XLSX.utils.book_append_sheet(wb, ws, sess.type.toUpperCase().slice(0, 10));
+
+  // Pesaje: add summary sheet
+  if (sess.type === 'pesaje') {
+    const pesos = recs.map(r => r.data.peso).filter(p => typeof p === 'number' && !isNaN(p));
+    if (pesos.length) {
+      const suma = pesos.reduce((a, b) => a + b, 0);
+      const summaryRows = [
+        { 'Concepto': 'Total animales',   'Valor': pesos.length,                           'Unidad': '' },
+        { 'Concepto': 'Peso promedio',    'Valor': parseFloat((suma / pesos.length).toFixed(1)), 'Unidad': 'kg' },
+        { 'Concepto': 'Peso total',       'Valor': parseFloat(suma.toFixed(1)),             'Unidad': 'kg' },
+        { 'Concepto': 'Peso mínimo',      'Valor': parseFloat(Math.min(...pesos).toFixed(1)), 'Unidad': 'kg' },
+        { 'Concepto': 'Peso máximo',      'Valor': parseFloat(Math.max(...pesos).toFixed(1)), 'Unidad': 'kg' },
+      ];
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      wsSummary['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 8 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'RESUMEN');
+    }
+  }
+
+  // Preñez: add summary sheet
+  if (sess.type === 'prenez' && recs.length) {
+    const CATS = [
+      'Preñada Grande', 'Preñada Mediana', 'Preñada Chica', 'Preñada CUT',
+      'Vacía Buena', 'Vacía Descarte'
+    ];
+    const counts = {};
+    CATS.forEach(c => counts[c] = 0);
+    recs.forEach(r => { if (counts[r.data.resultado] !== undefined) counts[r.data.resultado]++; });
+
+    const total = recs.length;
+    const totalPren = ['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].reduce((s,k) => s+counts[k], 0);
+    const totalVac  = ['Vacía Buena','Vacía Descarte'].reduce((s,k) => s+counts[k], 0);
+    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
+
+    const summaryRows = [
+      { 'Categoría': 'TOTAL ANIMALES',  'Cantidad': total,        'Porcentaje': '' },
+      { 'Categoría': '— PREÑADAS —',    'Cantidad': totalPren,    'Porcentaje': pct(totalPren) + '%' },
+      ...['Preñada Grande','Preñada Mediana','Preñada Chica','Preñada CUT'].map(k => ({
+        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
+      })),
+      { 'Categoría': '— VACÍAS —',      'Cantidad': totalVac,     'Porcentaje': pct(totalVac) + '%' },
+      ...['Vacía Buena','Vacía Descarte'].map(k => ({
+        'Categoría': '   ' + k, 'Cantidad': counts[k], 'Porcentaje': pct(counts[k]) + '%'
+      })),
+    ];
+    const wsPrenez = XLSX.utils.json_to_sheet(summaryRows);
+    wsPrenez['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsPrenez, 'RESUMEN');
+  }
+
+  // Mortandad: add summary sheet
+  if (sess.type === 'mortandad' && recs.length) {
+    const CAUSAS = ['Enfermedad','Accidente','Depredador','Problema de Parto','Causa Desconocida','Otra'];
+    const counts = {};
+    CAUSAS.forEach(c => counts[c] = 0);
+    recs.forEach(r => { if (counts[r.data.causa] !== undefined) counts[r.data.causa]++; });
+    const total = recs.length;
+    const pct = n => total > 0 ? parseFloat(((n/total)*100).toFixed(1)) : 0;
+    const summaryRows = [
+      { 'Concepto': 'TOTAL BAJAS', 'Cantidad': total, 'Porcentaje': '' },
+      ...CAUSAS.filter(c => counts[c] > 0).map(c => ({
+        'Concepto': c, 'Cantidad': counts[c], 'Porcentaje': pct(counts[c]) + '%'
+      }))
+    ];
+    const wsMort = XLSX.utils.json_to_sheet(summaryRows);
+    wsMort['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsMort, 'RESUMEN');
+  }
+
+  // Venta: add summary sheet
+  if (sess.type === 'venta' && recs.length) {
+    const summaryRows = [
+      { 'Concepto': 'Sesión',          'Valor': sess.name },
+      { 'Concepto': 'Fecha',           'Valor': sess.date },
+      { 'Concepto': 'Total animales',  'Valor': recs.length },
+    ];
+    const wsVenta = XLSX.utils.json_to_sheet(summaryRows);
+    wsVenta['!cols'] = [{ wch: 20 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsVenta, 'RESUMEN');
+  }
+
+  const fname = `TIGGA Corral_${sess.name.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_')}_${sess.date}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  toast('✓ Excel exportado');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DELETE SESSION
+   ═══════════════════════════════════════════════════════════ */
+async function deleteSession() {
+  if (!confirm('¿Eliminar esta sesión y todos sus registros?\n\nEsta acción no se puede deshacer.')) return;
+  const recs = await dbGetByIdx('records', 'sessionId', currentSessId);
+  for (const r of recs) await dbDel('records', r.id);
+  await dbDel('sessions', currentSessId);
+  currentSessId = null;
+  goHome();
+  toast('Sesión eliminada');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILS
+   ═══════════════════════════════════════════════════════════ */
+function todayDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(s) {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
+}
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _toastTimer;
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVATION SYSTEM
+   ═══════════════════════════════════════════════════════════ */
+const API_URL = 'https://api.fieldtraz.app';
+const GRACE_DAYS = 10;
+
+function getDeviceId() {
+  let id = localStorage.getItem('tc_device_id');
+  if (!id) {
+    id = 'TC-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    localStorage.setItem('tc_device_id', id);
+  }
+  return id;
+}
+
+function getLicenseStatus() {
+  const act = JSON.parse(localStorage.getItem('tc_activation') || 'null');
+  if (!act) return 'none';
+  const now = new Date(); now.setHours(0,0,0,0);
+  const venc = new Date(act.vencimiento);
+  const diff = Math.floor((venc - now) / 86400000);
+  if (diff >= 0) return 'active';
+  if (diff >= -GRACE_DAYS) return { grace: Math.abs(diff) };
+  return 'expired';
+}
+
+async function activarApp() {
+  const token = document.getElementById('actCodeInput').value.trim().toUpperCase();
+  const errEl = document.getElementById('actError');
+  const btn = document.querySelector('.act-btn');
+  errEl.style.display = 'none';
+  if (!token) { errEl.textContent = 'Ingresá el token de activación.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'VERIFICANDO...'; btn.disabled = true;
+  try {
+    const resp = await fetch(`${API_URL}/corral/activar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, device_id: getDeviceId(), device_name: navigator.userAgent.slice(0,60) })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      localStorage.setItem('tc_activation', JSON.stringify({ token, device_id: getDeviceId(), nombre: data.nombre, vencimiento: data.vencimiento, activatedAt: new Date().toISOString() }));
+      document.getElementById('actOverlay').style.display = 'none';
+      toast('✓ TIGGA Corral activado — ' + data.nombre);
+      loadHome();
+    } else {
+      const errores = { 'token_invalido': 'Token inválido.', 'token_no_autorizado_para_corral': 'Token no válido para TIGGA Corral.', 'licencia_suspendida': 'Licencia suspendida.', 'licencia_vencida': 'Licencia vencida.', 'limite_dispositivos': `Límite de ${data.max||3} dispositivos alcanzado.` };
+      errEl.textContent = errores[data.error] || 'Error de activación.'; errEl.style.display = 'block';
+    }
+  } catch(e) { errEl.textContent = 'Sin conexión. Necesitás internet para activar.'; errEl.style.display = 'block'; }
+  finally { btn.textContent = 'ACTIVAR'; btn.disabled = false; }
+}
+
+function checkActivation() {
+  const status = getLicenseStatus();
+  if (status === 'none') { document.getElementById('actOverlay').style.display = 'flex'; return false; }
+  if (status === 'expired') { document.getElementById('expOverlay').style.display = 'flex'; return false; }
+  if (typeof status === 'object' && status.grace !== undefined) {
+    const banner = document.getElementById('graceBanner');
+    document.getElementById('graceMsg').textContent = `⚠ Tu licencia venció hace ${status.grace} día${status.grace>1?'s':''}. Tenés ${GRACE_DAYS - status.grace} días para renovar.`;
+    banner.style.display = 'flex';
+  }
+  return true;
+}
+
+function contactarRenovacion() {
+  const act = JSON.parse(localStorage.getItem('tc_activation') || '{}');
+  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral.\nEstancia: ${act.nombre||'-'}\nDevice ID: ${getDeviceId()}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════ */
+initDB()
+  .then(() => {
+    if (checkActivation()) loadHome();
+  })
+  .catch(err => {
+    document.body.innerHTML = `<div style="padding:24px;color:#c00;font-family:monospace">
+      <strong>Error al iniciar la base de datos:</strong><br>${err}</div>`;
+  });
+</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('TIGGA Corral offline OK'))
+          .catch(e => console.warn('SW:', e));
+      });
+    }
+  </script>
+
+<!-- ACTIVATION OVERLAY -->
+<div class="act-overlay" id="actOverlay" style="display:none">
+  <div class="act-logo">TIGGA CORRAL</div>
+  <div class="act-sub">Gestión de Campo Ganadera</div>
+  <div class="act-card">
+    <div class="act-title">▸ Activación requerida</div>
+    <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de TIGGA Corral.</div>
+    <input class="act-input" id="actCodeInput" type="text" placeholder="Token de activación" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <button class="act-btn" onclick="activarApp()">ACTIVAR</button>
+    <div class="act-error" id="actError">Código inválido. Verificá e intentá de nuevo.</div>
+  </div>
+  <div class="act-contact">
+    ¿Necesitás un código?<br>
+    Contactá a tu proveedor de TIGGA Corral
   </div>
 </div>
 
-<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("./sw.js");}</script>
-<script src="js/db.js"></script>
-<script src="js/sync.js"></script>
-<script src="js/app.js"></script>
+<!-- GRACE PERIOD BANNER -->
+<div class="grace-banner" id="graceBanner" style="display:none">
+  <span id="graceMsg">⚠ Tu licencia venció. Tenés X días para renovar.</span>
+  <button class="grace-close" onclick="document.getElementById('graceBanner').style.display='none'">×</button>
+</div>
+
+<!-- EXPIRED OVERLAY -->
+<div class="exp-overlay" id="expOverlay" style="display:none">
+  <div class="exp-icon">🔒</div>
+  <div class="exp-title">Licencia vencida</div>
+  <div class="exp-desc">Tu período de gracia de 10 días ha terminado.<br>Contactá a tu proveedor para renovar y seguir usando TIGGA Corral.</div>
+  <button class="exp-contact" onclick="contactarRenovacion()">CONTACTAR PARA RENOVAR</button>
+</div>
+
 </body>
 </html>
