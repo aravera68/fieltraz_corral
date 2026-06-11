@@ -1249,27 +1249,20 @@ function toast(msg, isError = false) {
 
 
 /* ═══════════════════════════════════════════════════════════
-   ACTIVATION SYSTEM
+   ACTIVATION SYSTEM — API
    ═══════════════════════════════════════════════════════════ */
-const FT_SECRET = "FT2025PY_k9x";
+const API_URL = 'https://fieldtraz.app';
 const GRACE_DAYS = 10;
 
-async function sha256hex(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
-}
-
-async function decodeActivationCode(code) {
-  try {
-    const p = code.toUpperCase().trim().split('-');
-    if (p.length !== 6 || p[0] !== 'FT') return null;
-    const [_,h1,h2,h3,dateC,est] = p;
-    if (dateC.length !== 8 || est.length !== 4) return null;
-    const h = await sha256hex(`${est}|${dateC}|${FT_SECRET}`);
-    if (h1!==h.slice(0,6)||h2!==h.slice(6,12)||h3!==h.slice(12,16)) return null;
-    const fecha = `${dateC.slice(0,4)}-${dateC.slice(4,6)}-${dateC.slice(6,8)}`;
-    return { estancia: est, vencimiento: fecha };
-  } catch { return null; }
+// Genera o recupera un device_id único y permanente para este dispositivo
+function getDeviceId() {
+  let id = localStorage.getItem('tc_device_id');
+  if (!id) {
+    id = 'TC-' + Date.now().toString(36).toUpperCase() + '-' +
+         Math.random().toString(36).slice(2,8).toUpperCase();
+    localStorage.setItem('tc_device_id', id);
+  }
+  return id;
 }
 
 function getLicenseStatus() {
@@ -1284,21 +1277,58 @@ function getLicenseStatus() {
 }
 
 async function activarApp() {
-  const code = document.getElementById('actCodeInput').value.trim();
+  const token = document.getElementById('actCodeInput').value.trim().toUpperCase();
   const errEl = document.getElementById('actError');
+  const btn = document.querySelector('.act-btn');
   errEl.style.display = 'none';
-  const data = await decodeActivationCode(code);
-  if (!data) {
+
+  if (!token) {
+    errEl.textContent = 'Ingresá el token de activación.';
     errEl.style.display = 'block';
     return;
   }
-  localStorage.setItem('tc_activation', JSON.stringify({
-    code, estancia: data.estancia, vencimiento: data.vencimiento,
-    activatedAt: new Date().toISOString()
-  }));
-  document.getElementById('actOverlay').style.display = 'none';
-  toast('✓ TIGGA Corral activado');
-  loadHome();
+
+  btn.textContent = 'VERIFICANDO...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(`${API_URL}/corral/activar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, device_id: getDeviceId(), device_name: navigator.userAgent.slice(0,60) })
+    });
+
+    const data = await resp.json();
+
+    if (data.ok) {
+      localStorage.setItem('tc_activation', JSON.stringify({
+        token,
+        device_id: getDeviceId(),
+        nombre: data.nombre,
+        vencimiento: data.vencimiento,
+        activatedAt: new Date().toISOString()
+      }));
+      document.getElementById('actOverlay').style.display = 'none';
+      toast('✓ TIGGA Corral activado — ' + data.nombre);
+      loadHome();
+    } else {
+      const errores = {
+        'token_invalido':                 'Token inválido. Verificá e intentá de nuevo.',
+        'token_no_autorizado_para_corral':'Este token no es válido para TIGGA Corral.',
+        'licencia_suspendida':            'La licencia está suspendida. Contactá a tu proveedor.',
+        'licencia_vencida':               'La licencia venció. Contactá a tu proveedor para renovar.',
+        'limite_dispositivos':            `Límite de dispositivos alcanzado (máx ${data.max || 3}). Contactá a tu proveedor.`,
+      };
+      errEl.textContent = errores[data.error] || 'Error de activación. Intentá de nuevo.';
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    errEl.textContent = 'Sin conexión. Necesitás internet para activar por primera vez.';
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent = 'ACTIVAR';
+    btn.disabled = false;
+  }
 }
 
 function checkActivation() {
@@ -1322,7 +1352,7 @@ function checkActivation() {
 
 function contactarRenovacion() {
   const act = JSON.parse(localStorage.getItem('tc_activation') || '{}');
-  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral. Estancia: ${act.estancia || '-'}`);
+  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral.\nEstancia: ${act.nombre || '-'}\nDevice ID: ${getDeviceId()}`);
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
@@ -1355,7 +1385,7 @@ initDB()
   <div class="act-card">
     <div class="act-title">▸ Activación requerida</div>
     <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de TIGGA Corral.</div>
-    <input class="act-input" id="actCodeInput" type="text" placeholder="FT-XXXXXX-XXXXXX-XXXX-XXXXXXXX-XXXX" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <input class="act-input" id="actCodeInput" type="text" placeholder="Token de activación" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     <button class="act-btn" onclick="activarApp()">ACTIVAR</button>
     <div class="act-error" id="actError">Código inválido. Verificá e intentá de nuevo.</div>
   </div>
