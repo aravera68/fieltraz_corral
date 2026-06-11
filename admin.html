@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FieldTraz Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0f08;--bg2:#111a0d;--bg3:#162012;
+  --green:#4CAF50;--green-dim:#2d6b30;--green-bright:#7ed87f;
+  --amber:#f5c842;--red:#e05c5c;--blue:#5c9de0;
+  --text:#e8f0e4;--text-muted:#7a9472;--text-faint:#3d5438;
+  --border:rgba(76,175,80,0.15);--border-bright:rgba(76,175,80,0.35);
+  --ff:'Syne',sans-serif;--fm:'Space Mono',monospace;
+  --r:8px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--ff);}
+body{display:flex;flex-direction:column;}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg);position:relative;overflow:hidden;}
+#loginScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(76,175,80,0.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 20%,rgba(126,216,127,0.05) 0%,transparent 50%);pointer-events:none;}
+.login-box{width:100%;max-width:400px;position:relative;z-index:1;}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:40px;}
+.login-logo-icon{width:48px;height:48px;background:var(--green);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.login-logo-text{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-1px;}
+.login-logo-sub{font-size:11px;color:var(--text-muted);font-family:var(--fm);letter-spacing:2px;text-transform:uppercase;}
+.login-title{font-size:15px;font-weight:600;color:var(--text-muted);margin-bottom:20px;font-family:var(--fm);}
+.login-input{width:100%;padding:13px 16px;background:var(--bg2);border:1px solid var(--border-bright);border-radius:var(--r);font-size:14px;font-family:var(--fm);color:var(--text);letter-spacing:2px;margin-bottom:12px;outline:none;transition:border-color .2s;}
+.login-input:focus{border-color:var(--green);}
+.login-input::placeholder{color:var(--text-faint);letter-spacing:1px;}
+.login-btn{width:100%;padding:13px;background:var(--green);border:none;border-radius:var(--r);font-size:14px;font-weight:700;font-family:var(--ff);color:#0a0f08;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.login-btn:hover{background:var(--green-bright);}
+.login-error{color:var(--red);font-size:12px;font-family:var(--fm);margin-top:8px;display:none;}
+
+/* APP LAYOUT */
+#appScreen{display:none;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-brand{font-size:18px;font-weight:800;color:var(--green-bright);letter-spacing:-0.5px;}
+.topbar-badge{font-size:10px;font-family:var(--fm);background:var(--green-dim);color:var(--green-bright);padding:2px 8px;border-radius:20px;letter-spacing:1px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.server-status{font-size:11px;font-family:var(--fm);color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.logout-btn{font-size:12px;font-family:var(--fm);color:var(--text-muted);background:none;border:1px solid var(--border);border-radius:var(--r);padding:5px 12px;cursor:pointer;transition:all .2s;}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+.main{display:grid;grid-template-columns:220px 1fr;flex:1;}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(76,175,80,0.05);}
+.nav-item.active{color:var(--green-bright);border-left-color:var(--green);background:rgba(76,175,80,0.08);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-section{font-size:10px;font-family:var(--fm);color:var(--text-faint);letter-spacing:2px;padding:16px 20px 6px;text-transform:uppercase;}
+
+/* CONTENT */
+.content{padding:28px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:var(--accent,var(--green));opacity:.06;border-radius:0 12px 0 60px;}
+.stat-num{font-size:32px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;}
+.stat-lbl{font-size:11px;font-family:var(--fm);color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.stat-card.green{--accent:var(--green);}
+.stat-card.amber{--accent:var(--amber);}
+.stat-card.blue{--accent:var(--blue);}
+.stat-card.red{--accent:var(--red);}
+.stat-num.green{color:var(--green-bright);}
+.stat-num.amber{color:var(--amber);}
+.stat-num.blue{color:var(--blue);}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:800;color:var(--text);}
+.page-sub{font-size:12px;font-family:var(--fm);color:var(--text-muted);margin-top:2px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:600;font-family:var(--ff);cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:var(--green);color:#0a0f08;}
+.btn-primary:hover{background:var(--green-bright);}
+.btn-ghost{background:transparent;border:1px solid var(--border-bright);color:var(--text-muted);}
+.btn-ghost:hover{border-color:var(--green);color:var(--green-bright);}
+.btn-danger{background:transparent;border:1px solid rgba(224,92,92,0.3);color:var(--red);}
+.btn-danger:hover{background:rgba(224,92,92,0.1);}
+.btn-success{background:transparent;border:1px solid rgba(76,175,80,0.3);color:var(--green-bright);}
+.btn-success:hover{background:rgba(76,175,80,0.1);}
+.btn-sm{padding:5px 12px;font-size:11px;}
+
+/* TABLE */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:12px 16px;font-size:10px;font-family:var(--fm);color:var(--text-faint);text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid var(--border);background:var(--bg3);}
+td{padding:14px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(76,175,80,0.03);}
+.td-mono{font-family:var(--fm);font-size:11px;color:var(--text-muted);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--fm);}
+.badge-active{background:rgba(76,175,80,0.15);color:var(--green-bright);}
+.badge-suspended{background:rgba(224,92,92,0.15);color:var(--red);}
+.badge-expired{background:rgba(245,200,66,0.15);color:var(--amber);}
+.badge-plan{background:rgba(92,157,224,0.15);color:var(--blue);}
+.badge-trazapy{background:rgba(34,197,94,0.15);color:#4ade80;}
+.badge-corral{background:rgba(249,115,22,0.2);color:#fb923c;}
+.badge-ambos{background:rgba(59,130,246,0.15);color:#60a5fa;}
+
+/* TOKEN BOX */
+.token-box{font-family:var(--fm);font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--green-bright);letter-spacing:1px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+.token-box:hover{border-color:var(--green);background:rgba(76,175,80,0.05);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;padding:24px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border-bright);border-radius:16px;padding:28px;width:100%;max-width:480px;}
+.modal-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.modal-sub{font-size:12px;font-family:var(--fm);color:var(--text-muted);margin-bottom:24px;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:11px;font-family:var(--fm);color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;}
+.form-input{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border-bright);border-radius:var(--r);font-size:14px;font-family:var(--ff);color:var(--text);outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--green);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a9472' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end;}
+
+/* TOKEN RESULT */
+.token-result{background:var(--bg3);border:1px solid var(--green-dim);border-radius:var(--r);padding:16px;margin-top:16px;display:none;}
+.token-result-label{font-size:10px;font-family:var(--fm);color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.token-result-value{font-family:var(--fm);font-size:14px;color:var(--green-bright);word-break:break-all;line-height:1.6;}
+.token-copy-btn{margin-top:10px;width:100%;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 24px;color:var(--text-muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:15px;font-weight:600;color:var(--text);}
+.empty-sub{font-size:12px;font-family:var(--fm);margin-top:6px;}
+
+/* LOADING */
+.loading{text-align:center;padding:40px;color:var(--text-muted);font-family:var(--fm);font-size:13px;}
+
+/* ALERT */
+.alert{padding:12px 16px;border-radius:var(--r);font-size:13px;margin-bottom:16px;display:none;}
+.alert-success{background:rgba(76,175,80,0.1);border:1px solid var(--green-dim);color:var(--green-bright);}
+.alert-error{background:rgba(224,92,92,0.1);border:1px solid rgba(224,92,92,0.3);color:var(--red);}
+
+/* ACTIVITY LOG */
+.log-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.log-item:last-child{border-bottom:none;}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.log-text{font-size:13px;color:var(--text);flex:1;}
+.log-time{font-size:11px;font-family:var(--fm);color:var(--text-faint);}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">🐄</div>
+      <div>
+        <div class="login-logo-text">FieldTraz</div>
+        <div class="login-logo-sub">Admin Panel</div>
+      </div>
+    </div>
+    <div class="login-title">// acceso_administrador</div>
+    <input class="login-input" type="password" id="loginToken" placeholder="Admin token..." onkeydown="if(event.key==='Enter')login()"/>
+    <button class="login-btn" onclick="login()">Ingresar →</button>
+    <div class="login-error" id="loginError">Token inválido o servidor no disponible</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-brand">FieldTraz</span>
+      <span class="topbar-badge">ADMIN</span>
+    </div>
+    <div class="topbar-right">
+      <div class="server-status"><span class="status-dot"></span><span id="serverUrl">api.fieldtraz.app</span></div>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sidebar">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('licencias')"><span class="nav-icon">🔑</span>Licencias</div>
+      <div class="nav-section">Sistema</div>
+      <div class="nav-item" onclick="showPage('actividad')"><span class="nav-icon">📡</span>Actividad sync</div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div><div class="page-title">Dashboard</div><div class="page-sub">Resumen del sistema en tiempo real</div></div>
+          <button class="btn btn-ghost" onclick="loadDashboard()">↻ Actualizar</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card green"><div class="stat-num green" id="stat-licencias">—</div><div class="stat-lbl">Licencias activas</div></div>
+          <div class="stat-card blue"><div class="stat-num blue" id="stat-animales">—</div><div class="stat-lbl">Animales registrados</div></div>
+          <div class="stat-card amber"><div class="stat-num amber" id="stat-syncs">—</div><div class="stat-lbl">Syncs últimas 24h</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Licencias totales</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Establecimiento</th><th>Plan</th><th>Animales</th><th>Último sync</th><th>Estado</th><th>Expira</th></tr></thead>
+            <tbody id="dashboard-table"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LICENCIAS -->
+      <div class="page" id="page-licencias">
+        <div class="page-header">
+          <div><div class="page-title">Licencias</div><div class="page-sub">Gestión de clientes y accesos</div></div>
+          <button class="btn btn-primary" onclick="openModalNuevaLicencia()">+ Nueva licencia</button>
+        </div>
+        <div class="alert alert-success" id="licAlert"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Establecimiento</th><th>Token</th><th>Plan</th><th>Animales</th><th>Último sync</th><th>Expira</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="licencias-table"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ACTIVIDAD -->
+      <div class="page" id="page-actividad">
+        <div class="page-header">
+          <div><div class="page-title">Actividad de sync</div><div class="page-sub">Últimas sincronizaciones registradas</div></div>
+          <button class="btn btn-ghost" onclick="loadActividad()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Establecimiento</th><th>Dispositivo</th><th>Enviados</th><th>Recibidos</th><th>Fecha</th></tr></thead>
+            <tbody id="actividad-table"><tr><td colspan="5" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DATOS DEL CLIENTE -->
+<div class="modal-overlay" id="modalCliente">
+  <div class="modal" style="max-width:540px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">Nuevo cliente</div>
+    <div class="modal-sub">// registrar_establecimiento — paso 1 de 2</div>
+
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Nombre del establecimiento *</label>
+        <input class="form-input" id="cNombre" type="text" placeholder="Ej: Estancia Don Juan"/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre del propietario *</label>
+        <input class="form-input" id="cPropietario" type="text" placeholder="Ej: Juan Pérez"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="cEmail" type="email" placeholder="correo@ejemplo.com"/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Teléfono</label>
+        <input class="form-input" id="cTelefono" type="tel" placeholder="+595 981 000000"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ubicación</label>
+        <input class="form-input" id="cUbicacion" type="text" placeholder="Ej: Concepción, PY"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tipo de ganado</label>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 14px;background:var(--bg3);border:1px solid var(--border-bright);border-radius:var(--r);transition:all .15s" id="chk-vacuno">
+          <input type="checkbox" value="vacuno" onchange="toggleChkStyle(this)" style="accent-color:var(--green);width:14px;height:14px"/> Vacuno
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 14px;background:var(--bg3);border:1px solid var(--border-bright);border-radius:var(--r);transition:all .15s" id="chk-equino">
+          <input type="checkbox" value="equino" onchange="toggleChkStyle(this)" style="accent-color:var(--green);width:14px;height:14px"/> Equino
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 14px;background:var(--bg3);border:1px solid var(--border-bright);border-radius:var(--r);transition:all .15s" id="chk-ovino">
+          <input type="checkbox" value="ovino" onchange="toggleChkStyle(this)" style="accent-color:var(--green);width:14px;height:14px"/> Ovino
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 14px;background:var(--bg3);border:1px solid var(--border-bright);border-radius:var(--r);transition:all .15s" id="chk-porcino">
+          <input type="checkbox" value="porcino" onchange="toggleChkStyle(this)" style="accent-color:var(--green);width:14px;height:14px"/> Porcino
+        </label>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cant. aprox. de animales</label>
+        <input class="form-input" id="cCantidad" type="number" min="1" placeholder="Ej: 350"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rubro</label>
+        <select class="form-input form-select" id="cRubro">
+          <option value="">— Seleccionar —</option>
+          <option value="cria">Cría</option>
+          <option value="engorde">Engorde</option>
+          <option value="lecheria">Lechería</option>
+          <option value="mixto">Mixto</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Plan *</label>
+      <select class="form-input form-select" id="cPlan">
+        <option value="basico">Básico — hasta 200 animales</option>
+        <option value="estandar" selected>Estándar — hasta 500 animales</option>
+        <option value="pro">Pro — hasta 2000 animales</option>
+        <option value="ilimitado">Ilimitado</option>
+      </select>
+    </div>
+
+    <div class="alert alert-error" id="clienteError" style="display:none"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalCliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarDatosCliente()">Continuar → Crear licencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA LICENCIA -->
+<div class="modal-overlay" id="modalNueva">
+  <div class="modal">
+    <div class="modal-title">Nueva licencia</div>
+    <div class="modal-sub">// crear_acceso_cliente</div>
+    <div class="form-group">
+      <label class="form-label">Nombre del establecimiento</label>
+      <input class="form-input" id="nNombre" type="text" placeholder="Ej: Estancia Don Juan"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Aplicación</label>
+      <select class="form-input form-select" id="nTipo">
+        <option value="trazapy">TrazaPY</option>
+        <option value="corral">TIGGA Corral</option>
+        <option value="ambos">Ambas</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Plan</label>
+        <select class="form-input form-select" id="nPlan">
+          <option value="basico">Básico (200 animales)</option>
+          <option value="estandar">Estándar (500 animales)</option>
+          <option value="pro">Pro (2000 animales)</option>
+          <option value="ilimitado">Ilimitado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duración (meses)</label>
+        <select class="form-input form-select" id="nMeses">
+          <option value="1">1 mes (prueba)</option>
+          <option value="3">3 meses</option>
+          <option value="6">6 meses</option>
+          <option value="12" selected>12 meses</option>
+          <option value="24">24 meses</option>
+        </select>
+      </div>
+    </div>
+    <div id="tokenResult" class="token-result">
+      <div class="token-result-label">// token_de_activacion — compartir con el cliente</div>
+      <div class="token-result-value" id="tokenResultValue"></div>
+      <button class="btn btn-success btn-sm token-copy-btn" onclick="copiarToken()">📋 Copiar token</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalNueva')">Cerrar</button>
+      <button class="btn btn-primary" id="btnCrear" onclick="crearLicencia()">Crear licencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RENOVAR -->
+<div class="modal-overlay" id="modalRenovar">
+  <div class="modal">
+    <div class="modal-title">Renovar licencia</div>
+    <div class="modal-sub" id="renovarSub">// extender_acceso</div>
+    <div class="form-group">
+      <label class="form-label">Meses adicionales</label>
+      <select class="form-input form-select" id="rMeses">
+        <option value="1">1 mes</option>
+        <option value="3">3 meses</option>
+        <option value="6">6 meses</option>
+        <option value="12" selected>12 meses</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalRenovar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarRenovar()">Renovar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://api.fieldtraz.app';
+let adminToken = localStorage.getItem('ft_admin_token') || '';
+let renovarId = null;
+
+// ---- AUTH ----
+async function login() {
+  const token = document.getElementById('loginToken').value.trim();
+  if (!token) return;
+  try {
+    const res = await fetch(`${API}/admin/stats`, { headers: { 'x-admin-token': token } });
+    if (!res.ok) throw new Error('Token inválido');
+    adminToken = token;
+    localStorage.setItem('ft_admin_token', token);
+    showApp();
+  } catch(e) {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  adminToken = '';
+  localStorage.removeItem('ft_admin_token');
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginToken').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'flex';
+  loadDashboard();
+  loadLicencias();
+  loadActividad();
+}
+
+// Auto-login si hay token guardado
+if (adminToken) {
+  fetch(`${API}/admin/stats`, { headers: { 'x-admin-token': adminToken } })
+    .then(r => r.ok ? showApp() : null)
+    .catch(() => null);
+}
+
+// ---- API ----
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: { 'x-admin-token': adminToken, 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
+
+// ---- NAVEGACIÓN ----
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(name === 'licencias' ? 'licencia' : name === 'actividad' ? 'actividad' : 'dashboard'))
+      n.classList.add('active');
+  });
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'licencias') loadLicencias();
+  if (name === 'actividad') loadActividad();
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard() {
+  try {
+    const [stats, licencias] = await Promise.all([
+      apiFetch('/admin/stats'),
+      apiFetch('/admin/licencias')
+    ]);
+    document.getElementById('stat-licencias').textContent = stats.licencias_activas;
+    document.getElementById('stat-animales').textContent = stats.animales_total;
+    document.getElementById('stat-syncs').textContent = stats.syncs_24h;
+    document.getElementById('stat-total').textContent = stats.licencias_total;
+
+    const tbody = document.getElementById('dashboard-table');
+    if (!licencias.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin licencias</div></div></td></tr>'; return; }
+    tbody.innerHTML = licencias.map(l => `
+      <tr>
+        <td><b>${l.nombre}</b></td>
+        <td><span class="badge badge-plan">${l.plan}</span> <span class="badge badge-${l.tipo||'trazapy'}">${(l.tipo||'trazapy').toUpperCase()}</span></td>
+        <td>${l.animales || 0} / ${l.max_animales}</td>
+        <td class="td-mono">${l.ultimo_sync ? fmtDate(l.ultimo_sync) : '—'}</td>
+        <td>${estadoBadge(l)}</td>
+        <td class="td-mono">${l.expira_en ? fmtDate(l.expira_en) : '—'}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ---- LICENCIAS ----
+async function loadLicencias() {
+  try {
+    const licencias = await apiFetch('/admin/licencias');
+    const tbody = document.getElementById('licencias-table');
+    if (!licencias.length) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔑</div><div class="empty-text">Sin licencias creadas</div><div class="empty-sub">Creá la primera con el botón + Nueva licencia</div></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = licencias.map(l => `
+      <tr>
+        <td><b>${l.nombre}</b></td>
+        <td><span class="badge badge-${l.tipo||'trazapy'}">${(l.tipo||'trazapy').toUpperCase()}</span></td>
+        <td><span class="token-box" onclick="copiarTexto('${l.token}')" title="Click para copiar">${l.token}</span></td>
+        <td><span class="badge badge-plan">${l.plan}</span></td>
+        <td>${l.animales || 0} / ${l.max_animales}</td>
+        <td class="td-mono">${l.ultimo_sync ? fmtDate(l.ultimo_sync) : '—'}</td>
+        <td class="td-mono">${l.expira_en ? fmtDate(l.expira_en) : '—'}</td>
+        <td>${estadoBadge(l)}</td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="openRenovar(${l.id},'${l.nombre}')">Renovar</button>
+            ${l.activo
+              ? `<button class="btn btn-danger btn-sm" onclick="suspender(${l.id})">Suspender</button>`
+              : `<button class="btn btn-success btn-sm" onclick="activar(${l.id})">Activar</button>`
+            }
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ---- ACTIVIDAD ----
+async function loadActividad() {
+  try {
+    const data = await apiFetch('/admin/actividad');
+    const tbody = document.getElementById('actividad-table');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">Sin actividad registrada</div></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(s => `
+      <tr>
+        <td>${s.establecimiento || '—'}</td>
+        <td class="td-mono">${s.device_id ? s.device_id.slice(0,20)+'...' : '—'}</td>
+        <td>${s.registros_enviados}</td>
+        <td>${s.registros_recibidos}</td>
+        <td class="td-mono">${fmtDate(s.creado_en)}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ---- MODAL CLIENTE ----
+let datosCliente = {};
+
+function openModalNuevaLicencia() {
+  ['cNombre','cPropietario','cEmail','cTelefono','cUbicacion','cCantidad'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('cPlan').value = 'estandar';
+  document.getElementById('cRubro').value = '';
+  document.getElementById('clienteError').style.display = 'none';
+  ['vacuno','equino','ovino','porcino'].forEach(tipo => {
+    const chk = document.querySelector(`#chk-${tipo} input`);
+    chk.checked = false;
+    toggleChkStyle(chk);
+  });
+  document.getElementById('modalCliente').classList.add('open');
+}
+
+function toggleChkStyle(chk) {
+  const label = chk.closest('label');
+  if (chk.checked) {
+    label.style.borderColor = 'var(--green)';
+    label.style.background = 'rgba(76,175,80,0.12)';
+    label.style.color = 'var(--green-bright)';
+  } else {
+    label.style.borderColor = '';
+    label.style.background = 'var(--bg3)';
+    label.style.color = 'var(--text)';
+  }
+}
+
+function confirmarDatosCliente() {
+  const nombre = document.getElementById('cNombre').value.trim();
+  const propietario = document.getElementById('cPropietario').value.trim();
+  const errEl = document.getElementById('clienteError');
+  if (!nombre) { errEl.textContent = 'El nombre del establecimiento es obligatorio.'; errEl.style.display = 'block'; return; }
+  if (!propietario) { errEl.textContent = 'El nombre del propietario es obligatorio.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+
+  datosCliente = {
+    propietario,
+    email:    document.getElementById('cEmail').value.trim(),
+    telefono: document.getElementById('cTelefono').value.trim(),
+    ubicacion: document.getElementById('cUbicacion').value.trim(),
+    ganado:   [...document.querySelectorAll('#modalCliente input[type=checkbox]:checked')].map(c => c.value),
+    cantidad_animales: parseInt(document.getElementById('cCantidad').value) || null,
+    rubro:    document.getElementById('cRubro').value || null,
+  };
+
+  document.getElementById('nNombre').value = nombre;
+  document.getElementById('nPlan').value = document.getElementById('cPlan').value;
+  document.getElementById('nMeses').value = '12';
+  document.getElementById('tokenResult').style.display = 'none';
+  document.getElementById('btnCrear').style.display = 'inline-flex';
+
+  closeModal('modalCliente');
+  document.getElementById('modalNueva').classList.add('open');
+}
+
+// ---- CREAR LICENCIA ----
+async function crearLicencia() {
+  const nombre = document.getElementById('nNombre').value.trim();
+  const plan = document.getElementById('nPlan').value;
+  const meses = parseInt(document.getElementById('nMeses').value);
+  if (!nombre) { alert('Ingresá el nombre del establecimiento'); return; }
+  const maxMap = { basico:200, estandar:500, pro:2000, ilimitado:99999 };
+  try {
+    const data = await apiFetch('/admin/licencias', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, plan, max_animales: maxMap[plan], meses, cliente: datosCliente, tipo: document.getElementById('nTipo').value })
+    });
+    document.getElementById('tokenResultValue').textContent = data.token_activacion;
+    document.getElementById('tokenResult').style.display = 'block';
+    document.getElementById('btnCrear').style.display = 'none';
+    datosCliente = {};
+    loadLicencias(); loadDashboard();
+    showAlert('licAlert', `✅ Licencia creada para "${nombre}"`);
+  } catch(e) { alert('Error al crear licencia: ' + e.message); }
+}
+
+function copiarToken() { copiarTexto(document.getElementById('tokenResultValue').textContent); }
+function copiarTexto(txt) { navigator.clipboard.writeText(txt).then(() => showToastAdmin('Token copiado al portapapeles')); }
+
+// ---- SUSPENDER / ACTIVAR ----
+async function suspender(id) {
+  if (!confirm('¿Suspender esta licencia? El cliente perderá acceso al sync.')) return;
+  await apiFetch(`/admin/licencias/${id}/suspender`, { method: 'PATCH' });
+  loadLicencias(); loadDashboard();
+  showToastAdmin('Licencia suspendida');
+}
+async function activar(id) {
+  await apiFetch(`/admin/licencias/${id}/activar`, { method: 'PATCH' });
+  loadLicencias(); loadDashboard();
+  showToastAdmin('Licencia activada');
+}
+
+// ---- RENOVAR ----
+function openRenovar(id, nombre) {
+  renovarId = id;
+  document.getElementById('renovarSub').textContent = `// ${nombre}`;
+  document.getElementById('modalRenovar').classList.add('open');
+}
+async function confirmarRenovar() {
+  const meses = parseInt(document.getElementById('rMeses').value);
+  await apiFetch(`/admin/licencias/${renovarId}/renovar`, { method: 'PATCH', body: JSON.stringify({ meses }) });
+  closeModal('modalRenovar');
+  loadLicencias(); loadDashboard();
+  showToastAdmin(`Licencia renovada por ${meses} meses`);
+}
+
+// ---- HELPERS ----
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function estadoBadge(l) {
+  if (!l.activo) return '<span class="badge badge-suspended">Suspendida</span>';
+  if (l.expira_en && new Date(l.expira_en) < new Date()) return '<span class="badge badge-expired">Vencida</span>';
+  return '<span class="badge badge-active">● Activa</span>';
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-PY', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' ' +
+    d.toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' });
+}
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// Toast
+let toastTimer;
+function showToastAdmin(msg) {
+  let t = document.getElementById('adminToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'adminToast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#2d6b30;color:#7ed87f;padding:10px 20px;border-radius:8px;font-size:13px;font-family:Space Mono,monospace;z-index:999;transition:all .25s;opacity:0;transform:translateY(10px)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1'; t.style.transform = 'translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(10px)'; }, 3000);
+}
+
+// Click outside modal to close
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// Enter en login
+document.getElementById('loginToken')?.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>
