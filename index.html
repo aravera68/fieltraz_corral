@@ -757,7 +757,34 @@ function buildInputArea(type) {
     </div>`;
 
   document.getElementById('inputFields').innerHTML = html;
-  setTimeout(() => { const f = document.getElementById('fAnimalId'); if (f) f.focus(); }, 80);
+  setTimeout(() => {
+    const fId = document.getElementById('fAnimalId');
+    if (!fId) return;
+    fId.focus();
+    // Interceptar Enter del lector RFID — no cierra el teclado
+    fId.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter' && e.keyCode !== 13) return;
+      e.preventDefault();
+      const peso = document.getElementById('fPeso');
+      if (peso) {
+        // Pesaje: Enter en ID mueve al campo de peso
+        peso.focus();
+        peso.select();
+      } else {
+        // Sanitación, preñez, servicio: Enter registra directo
+        addRecord();
+      }
+    });
+    // Enter en campo de peso → registrar animal
+    const fPeso = document.getElementById('fPeso');
+    if (fPeso) {
+      fPeso.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter' && e.keyCode !== 13) return;
+        e.preventDefault();
+        addRecord();
+      });
+    }
+  }, 80);
 }
 
 /* ── Add record ── */
@@ -1374,3 +1401,4 @@ initDB()
 
 </body>
 </html>
+
