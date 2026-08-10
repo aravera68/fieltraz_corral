@@ -506,6 +506,8 @@
     </div>
   </div>
 
+  <div id="kpSlotNew"></div>
+
   <hr>
   <button class="btn btn-primary" onclick="createSession()">CREAR SESIÓN</button>
   <button class="btn btn-outline" onclick="goHome()">CANCELAR</button>
@@ -632,6 +634,16 @@ function goNewSession() {
   document.getElementById('sanFields').style.display = 'none';
   setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
   showScreen('screenNew');
+
+  // Teclado en pantalla para esta pantalla
+  kpMount('kpSlotNew');
+  kpBind([
+    ['newName',     'NOMBRE DE SESIÓN'],
+    ['sanProducto', 'PRODUCTO'],
+    ['sanDosis',    'DOSIS (ML)'],
+    ['sanLote',     'LOTE']
+  ], ['newName', 'NOMBRE DE SESIÓN']);
+  setTimeout(() => document.getElementById('newName').focus(), 60);
 }
 
 function goSession(id) {
@@ -673,8 +685,10 @@ async function loadHome() {
    NEW SESSION
    ═══════════════════════════════════════════════════════════ */
 function onTypeChange() {
-  document.getElementById('sanFields').style.display =
-    document.getElementById('newType').value === 'sanitacion' ? 'block' : 'none';
+  const esSan = document.getElementById('newType').value === 'sanitacion';
+  document.getElementById('sanFields').style.display = esSan ? 'block' : 'none';
+  // El teclado debe seguir escribiendo en un campo válido
+  if (!esSan) kpBind([], ['newName', 'NOMBRE DE SESIÓN']);
 }
 
 async function createSession() {
@@ -825,42 +839,8 @@ function buildInputArea(type) {
       <input id="fComentario" type="text" placeholder="Observación libre..." autocomplete="off">
     </div>`;
 
-  // Teclado numérico en pantalla (el bastón BT oculta el teclado del sistema)
-  html += `
-    <div class="keypad-wrap" id="keypadWrap">
-      <div class="keypad-head">
-        <span class="keypad-target">Escribiendo en: <b id="kpTargetName">ID ANIMAL</b></span>
-        <span class="kp-mode">
-          <button type="button" class="kp-mode-btn on" id="kpBtnNum" onclick="kpModo('num')">123</button>
-          <button type="button" class="kp-mode-btn" id="kpBtnAbc" onclick="kpModo('abc')">ABC</button>
-          <button type="button" class="keypad-toggle" onclick="toggleKeypad()">Ocultar</button>
-        </span>
-      </div>
-      <div class="keypad-grid" id="keypadGrid">
-        <button type="button" class="kp-key" onclick="kpPress('7')">7</button>
-        <button type="button" class="kp-key" onclick="kpPress('8')">8</button>
-        <button type="button" class="kp-key" onclick="kpPress('9')">9</button>
-        <button type="button" class="kp-key" onclick="kpPress('4')">4</button>
-        <button type="button" class="kp-key" onclick="kpPress('5')">5</button>
-        <button type="button" class="kp-key" onclick="kpPress('6')">6</button>
-        <button type="button" class="kp-key" onclick="kpPress('1')">1</button>
-        <button type="button" class="kp-key" onclick="kpPress('2')">2</button>
-        <button type="button" class="kp-key" onclick="kpPress('3')">3</button>
-        <button type="button" class="kp-key" onclick="kpPress('.')">.</button>
-        <button type="button" class="kp-key" onclick="kpPress('0')">0</button>
-        <button type="button" class="kp-key kp-del" onclick="kpDel()">&#9003;</button>
-      </div>
-      <div class="keypad-letters" id="keypadLetters">
-        <div class="kp-row kp-row-1"><button type="button" class="kp-ltr" onclick="kpPress('Q')">Q</button><button type="button" class="kp-ltr" onclick="kpPress('W')">W</button><button type="button" class="kp-ltr" onclick="kpPress('E')">E</button><button type="button" class="kp-ltr" onclick="kpPress('R')">R</button><button type="button" class="kp-ltr" onclick="kpPress('T')">T</button><button type="button" class="kp-ltr" onclick="kpPress('Y')">Y</button><button type="button" class="kp-ltr" onclick="kpPress('U')">U</button><button type="button" class="kp-ltr" onclick="kpPress('I')">I</button><button type="button" class="kp-ltr" onclick="kpPress('O')">O</button><button type="button" class="kp-ltr" onclick="kpPress('P')">P</button></div>
-        <div class="kp-row kp-row-2"><button type="button" class="kp-ltr" onclick="kpPress('A')">A</button><button type="button" class="kp-ltr" onclick="kpPress('S')">S</button><button type="button" class="kp-ltr" onclick="kpPress('D')">D</button><button type="button" class="kp-ltr" onclick="kpPress('F')">F</button><button type="button" class="kp-ltr" onclick="kpPress('G')">G</button><button type="button" class="kp-ltr" onclick="kpPress('H')">H</button><button type="button" class="kp-ltr" onclick="kpPress('J')">J</button><button type="button" class="kp-ltr" onclick="kpPress('K')">K</button><button type="button" class="kp-ltr" onclick="kpPress('L')">L</button><button type="button" class="kp-ltr" onclick="kpPress('Ñ')">Ñ</button></div>
-        <div class="kp-row kp-row-3"><button type="button" class="kp-ltr" onclick="kpPress('Z')">Z</button><button type="button" class="kp-ltr" onclick="kpPress('X')">X</button><button type="button" class="kp-ltr" onclick="kpPress('C')">C</button><button type="button" class="kp-ltr" onclick="kpPress('V')">V</button><button type="button" class="kp-ltr" onclick="kpPress('B')">B</button><button type="button" class="kp-ltr" onclick="kpPress('N')">N</button><button type="button" class="kp-ltr" onclick="kpPress('M')">M</button><button type="button" class="kp-ltr kp-fn" onclick="kpPress('-')">-</button><button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button></div>
-        <div class="kp-row kp-row-4">
-          <button type="button" class="kp-ltr kp-fn" onclick="kpModo('num')">123</button>
-          <button type="button" class="kp-ltr" onclick="kpPress(' ')">ESPACIO</button>
-          <button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button>
-        </div>
-      </div>
-    </div>`;
+  // Slot donde se monta el teclado en pantalla
+  html += `<div id="kpSlotSession"></div>`;
 
   document.getElementById('inputFields').innerHTML = html;
 
@@ -869,21 +849,15 @@ function buildInputArea(type) {
     const fPeso = document.getElementById('fPeso');
     if (!fId) return;
 
-    // El keypad escribe en el campo que esté activo
-    kpSetTarget(fId, 'ID ANIMAL');
-    fId.addEventListener('focus', () => kpSetTarget(fId, 'ID ANIMAL'));
-    if (fPeso) fPeso.addEventListener('focus', () => kpSetTarget(fPeso, 'PESO (KG)'));
-
-    // Campos de texto: al tocarlos el keypad pasa a letras
-    const otros = [
+    // Montar el teclado y conectar los campos de esta pantalla
+    kpMount('kpSlotSession');
+    kpBind([
+      ['fAnimalId',   'ID ANIMAL'],
+      ['fPeso',       'PESO (KG)'],
       ['fComentario', 'COMENTARIO'],
       ['fToro',       'TORO / SEMENTAL'],
       ['fObs',        'OBSERVACIÓN']
-    ];
-    otros.forEach(([id, nombre]) => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('focus', () => kpSetTarget(el, nombre));
-    });
+    ], ['fAnimalId', 'ID ANIMAL']);
 
     // ── Detección de lectura del bastón ──
     // El bastón "tipea" muy rápido. Si los caracteres llegan a menos de
@@ -936,6 +910,65 @@ function buildInputArea(type) {
    así que no lo puede ocultar.
    ═══════════════════════════════════════════════════════════ */
 let kpTarget = null;
+
+// Markup del teclado — se monta en la pantalla que esté activa
+function kpHTML() {
+  return `<div class="keypad-wrap" id="keypadWrap">
+      <div class="keypad-head">
+        <span class="keypad-target">Escribiendo en: <b id="kpTargetName">ID ANIMAL</b></span>
+        <span class="kp-mode">
+          <button type="button" class="kp-mode-btn on" id="kpBtnNum" onclick="kpModo('num')">123</button>
+          <button type="button" class="kp-mode-btn" id="kpBtnAbc" onclick="kpModo('abc')">ABC</button>
+          <button type="button" class="keypad-toggle" onclick="toggleKeypad()">Ocultar</button>
+        </span>
+      </div>
+      <div class="keypad-grid" id="keypadGrid">
+        <button type="button" class="kp-key" onclick="kpPress('7')">7</button>
+        <button type="button" class="kp-key" onclick="kpPress('8')">8</button>
+        <button type="button" class="kp-key" onclick="kpPress('9')">9</button>
+        <button type="button" class="kp-key" onclick="kpPress('4')">4</button>
+        <button type="button" class="kp-key" onclick="kpPress('5')">5</button>
+        <button type="button" class="kp-key" onclick="kpPress('6')">6</button>
+        <button type="button" class="kp-key" onclick="kpPress('1')">1</button>
+        <button type="button" class="kp-key" onclick="kpPress('2')">2</button>
+        <button type="button" class="kp-key" onclick="kpPress('3')">3</button>
+        <button type="button" class="kp-key" onclick="kpPress('.')">.</button>
+        <button type="button" class="kp-key" onclick="kpPress('0')">0</button>
+        <button type="button" class="kp-key kp-del" onclick="kpDel()">&#9003;</button>
+      </div>
+      <div class="keypad-letters" id="keypadLetters">
+        <div class="kp-row kp-row-1"><button type="button" class="kp-ltr" onclick="kpPress('Q')">Q</button><button type="button" class="kp-ltr" onclick="kpPress('W')">W</button><button type="button" class="kp-ltr" onclick="kpPress('E')">E</button><button type="button" class="kp-ltr" onclick="kpPress('R')">R</button><button type="button" class="kp-ltr" onclick="kpPress('T')">T</button><button type="button" class="kp-ltr" onclick="kpPress('Y')">Y</button><button type="button" class="kp-ltr" onclick="kpPress('U')">U</button><button type="button" class="kp-ltr" onclick="kpPress('I')">I</button><button type="button" class="kp-ltr" onclick="kpPress('O')">O</button><button type="button" class="kp-ltr" onclick="kpPress('P')">P</button></div>
+        <div class="kp-row kp-row-2"><button type="button" class="kp-ltr" onclick="kpPress('A')">A</button><button type="button" class="kp-ltr" onclick="kpPress('S')">S</button><button type="button" class="kp-ltr" onclick="kpPress('D')">D</button><button type="button" class="kp-ltr" onclick="kpPress('F')">F</button><button type="button" class="kp-ltr" onclick="kpPress('G')">G</button><button type="button" class="kp-ltr" onclick="kpPress('H')">H</button><button type="button" class="kp-ltr" onclick="kpPress('J')">J</button><button type="button" class="kp-ltr" onclick="kpPress('K')">K</button><button type="button" class="kp-ltr" onclick="kpPress('L')">L</button><button type="button" class="kp-ltr" onclick="kpPress('Ñ')">Ñ</button></div>
+        <div class="kp-row kp-row-3"><button type="button" class="kp-ltr" onclick="kpPress('Z')">Z</button><button type="button" class="kp-ltr" onclick="kpPress('X')">X</button><button type="button" class="kp-ltr" onclick="kpPress('C')">C</button><button type="button" class="kp-ltr" onclick="kpPress('V')">V</button><button type="button" class="kp-ltr" onclick="kpPress('B')">B</button><button type="button" class="kp-ltr" onclick="kpPress('N')">N</button><button type="button" class="kp-ltr" onclick="kpPress('M')">M</button><button type="button" class="kp-ltr kp-fn" onclick="kpPress('-')">-</button><button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button></div>
+        <div class="kp-row kp-row-4">
+          <button type="button" class="kp-ltr kp-fn" onclick="kpModo('num')">123</button>
+          <button type="button" class="kp-ltr" onclick="kpPress(' ')">ESPACIO</button>
+          <button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Monta el teclado en un contenedor. Solo existe una instancia a la vez,
+// así los IDs internos nunca se duplican.
+function kpMount(slotId) {
+  document.querySelectorAll('[id^="kpSlot"]').forEach(s => s.innerHTML = '');
+  const slot = document.getElementById(slotId);
+  if (slot) slot.innerHTML = kpHTML();
+  kpTarget = null;
+}
+
+// Conecta campos al teclado: [[idCampo, etiqueta], ...]
+function kpBind(pares, primero) {
+  pares.forEach(([id, nombre]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('focus', () => kpSetTarget(el, nombre));
+  });
+  if (primero) {
+    const el = document.getElementById(primero[0]);
+    if (el) kpSetTarget(el, primero[1]);
+  }
+}
 
 // Campos que necesitan letras
 const KP_CAMPOS_TEXTO = ['fComentario', 'fObs', 'fToro'];
@@ -1534,7 +1567,12 @@ async function activarApp() {
 
 function checkActivation() {
   const status = getLicenseStatus();
-  if (status === 'none') { document.getElementById('actOverlay').style.display = 'flex'; return false; }
+  if (status === 'none') {
+    document.getElementById('actOverlay').style.display = 'flex';
+    kpMount('kpSlotAct');
+    kpBind([['actCodeInput', 'TOKEN']], ['actCodeInput', 'TOKEN']);
+    return false;
+  }
   if (status === 'expired') { document.getElementById('expOverlay').style.display = 'flex'; return false; }
   if (typeof status === 'object' && status.grace !== undefined) {
     const banner = document.getElementById('graceBanner');
@@ -1581,6 +1619,7 @@ initDB()
     <div class="act-desc">Ingresá el código de activación que recibiste. Si no tenés uno, contactá a tu proveedor de TIGGA Corral.</div>
     <input class="act-input" id="actCodeInput" type="text" placeholder="Token de activación" maxlength="38" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     <button class="act-btn" onclick="activarApp()">ACTIVAR</button>
+    <div id="kpSlotAct"></div>
     <div class="act-error" id="actError">Código inválido. Verificá e intentá de nuevo.</div>
   </div>
   <div class="act-contact">
@@ -1605,4 +1644,3 @@ initDB()
 
 </body>
 </html>
-
