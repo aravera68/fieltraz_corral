@@ -259,6 +259,38 @@
     }
     .kp-key.kp-ok:active { filter: brightness(0.85); }
 
+    /* ── MODO LETRAS ── */
+    .keypad-letters { display: none; }
+    .kp-row {
+      display: grid; gap: 4px; margin-bottom: 4px;
+    }
+    .kp-row-1 { grid-template-columns: repeat(10, 1fr); }
+    .kp-row-2 { grid-template-columns: repeat(10, 1fr); }
+    .kp-row-3 { grid-template-columns: repeat(9, 1fr); }
+    .kp-row-4 { grid-template-columns: 1.4fr 4fr 1.4fr; }
+    .kp-ltr {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Courier New', monospace;
+      font-size: 15px; font-weight: 700; padding: 13px 0;
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+      text-align: center; touch-action: manipulation;
+    }
+    .kp-ltr:active { background: var(--accent); color: #fff; }
+    .kp-ltr.kp-fn {
+      font-size: 11px; letter-spacing: 1px; color: var(--text-dim);
+      background: #e4e7eb;
+    }
+    .kp-ltr.kp-fn:active { background: var(--accent); color: #fff; }
+
+    /* Selector de modo */
+    .kp-mode { display: flex; gap: 4px; }
+    .kp-mode-btn {
+      background: none; border: 1px solid var(--border); color: var(--text-dim);
+      font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: 1px;
+      padding: 4px 10px; cursor: pointer; text-transform: uppercase;
+    }
+    .kp-mode-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
     /* ── PESAJE SUMMARY ── */
     .pesaje-summary {
       background: var(--surface); border: 1px solid var(--border);
@@ -798,7 +830,11 @@ function buildInputArea(type) {
     <div class="keypad-wrap" id="keypadWrap">
       <div class="keypad-head">
         <span class="keypad-target">Escribiendo en: <b id="kpTargetName">ID ANIMAL</b></span>
-        <button type="button" class="keypad-toggle" onclick="toggleKeypad()">Ocultar</button>
+        <span class="kp-mode">
+          <button type="button" class="kp-mode-btn on" id="kpBtnNum" onclick="kpModo('num')">123</button>
+          <button type="button" class="kp-mode-btn" id="kpBtnAbc" onclick="kpModo('abc')">ABC</button>
+          <button type="button" class="keypad-toggle" onclick="toggleKeypad()">Ocultar</button>
+        </span>
       </div>
       <div class="keypad-grid" id="keypadGrid">
         <button type="button" class="kp-key" onclick="kpPress('7')">7</button>
@@ -814,6 +850,16 @@ function buildInputArea(type) {
         <button type="button" class="kp-key" onclick="kpPress('0')">0</button>
         <button type="button" class="kp-key kp-del" onclick="kpDel()">&#9003;</button>
       </div>
+      <div class="keypad-letters" id="keypadLetters">
+        <div class="kp-row kp-row-1"><button type="button" class="kp-ltr" onclick="kpPress('Q')">Q</button><button type="button" class="kp-ltr" onclick="kpPress('W')">W</button><button type="button" class="kp-ltr" onclick="kpPress('E')">E</button><button type="button" class="kp-ltr" onclick="kpPress('R')">R</button><button type="button" class="kp-ltr" onclick="kpPress('T')">T</button><button type="button" class="kp-ltr" onclick="kpPress('Y')">Y</button><button type="button" class="kp-ltr" onclick="kpPress('U')">U</button><button type="button" class="kp-ltr" onclick="kpPress('I')">I</button><button type="button" class="kp-ltr" onclick="kpPress('O')">O</button><button type="button" class="kp-ltr" onclick="kpPress('P')">P</button></div>
+        <div class="kp-row kp-row-2"><button type="button" class="kp-ltr" onclick="kpPress('A')">A</button><button type="button" class="kp-ltr" onclick="kpPress('S')">S</button><button type="button" class="kp-ltr" onclick="kpPress('D')">D</button><button type="button" class="kp-ltr" onclick="kpPress('F')">F</button><button type="button" class="kp-ltr" onclick="kpPress('G')">G</button><button type="button" class="kp-ltr" onclick="kpPress('H')">H</button><button type="button" class="kp-ltr" onclick="kpPress('J')">J</button><button type="button" class="kp-ltr" onclick="kpPress('K')">K</button><button type="button" class="kp-ltr" onclick="kpPress('L')">L</button><button type="button" class="kp-ltr" onclick="kpPress('Ñ')">Ñ</button></div>
+        <div class="kp-row kp-row-3"><button type="button" class="kp-ltr" onclick="kpPress('Z')">Z</button><button type="button" class="kp-ltr" onclick="kpPress('X')">X</button><button type="button" class="kp-ltr" onclick="kpPress('C')">C</button><button type="button" class="kp-ltr" onclick="kpPress('V')">V</button><button type="button" class="kp-ltr" onclick="kpPress('B')">B</button><button type="button" class="kp-ltr" onclick="kpPress('N')">N</button><button type="button" class="kp-ltr" onclick="kpPress('M')">M</button><button type="button" class="kp-ltr kp-fn" onclick="kpPress('-')">-</button><button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button></div>
+        <div class="kp-row kp-row-4">
+          <button type="button" class="kp-ltr kp-fn" onclick="kpModo('num')">123</button>
+          <button type="button" class="kp-ltr" onclick="kpPress(' ')">ESPACIO</button>
+          <button type="button" class="kp-ltr kp-fn" onclick="kpDel()">&#9003;</button>
+        </div>
+      </div>
     </div>`;
 
   document.getElementById('inputFields').innerHTML = html;
@@ -827,6 +873,17 @@ function buildInputArea(type) {
     kpSetTarget(fId, 'ID ANIMAL');
     fId.addEventListener('focus', () => kpSetTarget(fId, 'ID ANIMAL'));
     if (fPeso) fPeso.addEventListener('focus', () => kpSetTarget(fPeso, 'PESO (KG)'));
+
+    // Campos de texto: al tocarlos el keypad pasa a letras
+    const otros = [
+      ['fComentario', 'COMENTARIO'],
+      ['fToro',       'TORO / SEMENTAL'],
+      ['fObs',        'OBSERVACIÓN']
+    ];
+    otros.forEach(([id, nombre]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('focus', () => kpSetTarget(el, nombre));
+    });
 
     // ── Detección de lectura del bastón ──
     // El bastón "tipea" muy rápido. Si los caracteres llegan a menos de
@@ -880,6 +937,22 @@ function buildInputArea(type) {
    ═══════════════════════════════════════════════════════════ */
 let kpTarget = null;
 
+// Campos que necesitan letras
+const KP_CAMPOS_TEXTO = ['fComentario', 'fObs', 'fToro'];
+
+function kpModo(modo) {
+  const num = document.getElementById('keypadGrid');
+  const abc = document.getElementById('keypadLetters');
+  const bN  = document.getElementById('kpBtnNum');
+  const bA  = document.getElementById('kpBtnAbc');
+  if (!num || !abc) return;
+  const esAbc = modo === 'abc';
+  num.style.display = esAbc ? 'none' : 'grid';
+  abc.style.display = esAbc ? 'block' : 'none';
+  if (bN) bN.classList.toggle('on', !esAbc);
+  if (bA) bA.classList.toggle('on', esAbc);
+}
+
 function kpSetTarget(el, nombre) {
   if (!el) return;
   kpTarget = el;
@@ -888,6 +961,8 @@ function kpSetTarget(el, nombre) {
   // Marcar visualmente el campo activo
   document.querySelectorAll('#inputFields input').forEach(i => i.style.borderColor = '');
   el.style.borderColor = 'var(--accent)';
+  // Cambiar solo al modo que corresponde al campo
+  kpModo(KP_CAMPOS_TEXTO.includes(el.id) ? 'abc' : 'num');
 }
 
 function kpPress(ch) {
@@ -1530,3 +1605,4 @@ initDB()
 
 </body>
 </html>
+
