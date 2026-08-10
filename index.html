@@ -762,26 +762,55 @@ function buildInputArea(type) {
     if (!fId) return;
     fId.focus();
     // Interceptar Enter del lector RFID — no cierra el teclado
+    // Forzar teclado virtual después de cada lectura RFID
+    function forceKeyboard(el) {
+      if (!el) return;
+      // Blur y refocus con delay para forzar reaparición del teclado virtual
+      el.blur();
+      setTimeout(() => {
+        el.focus();
+        // Truco adicional: cambiar readonly y volver para forzar teclado en iOS/Android
+        el.removeAttribute('readonly');
+        el.click();
+      }, 100);
+    }
+
     fId.addEventListener('keydown', function(e) {
       if (e.key !== 'Enter' && e.keyCode !== 13) return;
       e.preventDefault();
       const peso = document.getElementById('fPeso');
       if (peso) {
-        // Pesaje: Enter en ID mueve al campo de peso
-        peso.focus();
-        peso.select();
+        // Pesaje: Enter en ID mueve al campo de peso y fuerza teclado
+        setTimeout(() => { peso.focus(); peso.select(); forceKeyboard(peso); }, 50);
       } else {
-        // Sanitación, preñez, servicio: Enter registra directo
-        addRecord();
+        // Sanitación, preñez, servicio: registra y vuelve al ID con teclado forzado
+        addRecord().then ? addRecord().then(() => setTimeout(() => forceKeyboard(fId), 300))
+                        : (addRecord(), setTimeout(() => forceKeyboard(fId), 300));
       }
     });
-    // Enter en campo de peso → registrar animal
+
+    // También forzar teclado al recibir input del bastón (evento input)
+    fId.addEventListener('input', function() {
+      clearTimeout(fId._rfidTimer);
+      fId._rfidTimer = setTimeout(() => {
+        // Si el valor tiene largo suficiente (chip tiene 10+ chars), asumir lectura RFID completa
+        if (fId.value.length >= 8) {
+          const peso = document.getElementById('fPeso');
+          if (peso) {
+            setTimeout(() => { peso.focus(); peso.select(); forceKeyboard(peso); }, 150);
+          }
+        }
+      }, 200);
+    });
+
+    // Enter en campo de peso → registrar animal y volver al ID
     const fPeso = document.getElementById('fPeso');
     if (fPeso) {
       fPeso.addEventListener('keydown', function(e) {
         if (e.key !== 'Enter' && e.keyCode !== 13) return;
         e.preventDefault();
         addRecord();
+        setTimeout(() => forceKeyboard(fId), 400);
       });
     }
   }, 80);
