@@ -222,6 +222,43 @@
     .cat-count { font-size: 13px; font-weight: 700; color: var(--text); min-width: 24px; text-align: right; }
     .cat-pct { font-size: 11px; color: var(--text-dim); min-width: 42px; text-align: right; }
 
+
+    /* ── TECLADO NUMÉRICO EN PANTALLA ── */
+    .keypad-wrap { margin-top: 12px; }
+    .keypad-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .keypad-target {
+      font-size: 11px; letter-spacing: 1px; color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    .keypad-target b { color: var(--accent); font-size: 12px; }
+    .keypad-toggle {
+      background: none; border: 1px solid var(--border); color: var(--text-dim);
+      font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: 1px;
+      padding: 4px 10px; cursor: pointer; text-transform: uppercase;
+    }
+    .keypad-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    }
+    .kp-key {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Courier New', monospace;
+      font-size: 24px; font-weight: 700; padding: 16px 0;
+      cursor: pointer; user-select: none; text-align: center;
+      -webkit-user-select: none; touch-action: manipulation;
+    }
+    .kp-key:active { background: var(--accent); color: #fff; }
+    .kp-key.kp-wide { grid-column: span 2; }
+    .kp-key.kp-del { background: #fdeceb; color: var(--red); font-size: 20px; }
+    .kp-key.kp-del:active { background: var(--red); color: #fff; }
+    .kp-key.kp-ok {
+      background: var(--green); color: #fff; font-size: 14px;
+      letter-spacing: 2px; font-weight: 700;
+    }
+    .kp-key.kp-ok:active { filter: brightness(0.85); }
+
     /* ── PESAJE SUMMARY ── */
     .pesaje-summary {
       background: var(--surface); border: 1px solid var(--border);
@@ -756,64 +793,123 @@ function buildInputArea(type) {
       <input id="fComentario" type="text" placeholder="Observación libre..." autocomplete="off">
     </div>`;
 
+  // Teclado numérico en pantalla (el bastón BT oculta el teclado del sistema)
+  html += `
+    <div class="keypad-wrap" id="keypadWrap">
+      <div class="keypad-head">
+        <span class="keypad-target">Escribiendo en: <b id="kpTargetName">ID ANIMAL</b></span>
+        <button type="button" class="keypad-toggle" onclick="toggleKeypad()">Ocultar</button>
+      </div>
+      <div class="keypad-grid" id="keypadGrid">
+        <button type="button" class="kp-key" onclick="kpPress('7')">7</button>
+        <button type="button" class="kp-key" onclick="kpPress('8')">8</button>
+        <button type="button" class="kp-key" onclick="kpPress('9')">9</button>
+        <button type="button" class="kp-key" onclick="kpPress('4')">4</button>
+        <button type="button" class="kp-key" onclick="kpPress('5')">5</button>
+        <button type="button" class="kp-key" onclick="kpPress('6')">6</button>
+        <button type="button" class="kp-key" onclick="kpPress('1')">1</button>
+        <button type="button" class="kp-key" onclick="kpPress('2')">2</button>
+        <button type="button" class="kp-key" onclick="kpPress('3')">3</button>
+        <button type="button" class="kp-key" onclick="kpPress('.')">.</button>
+        <button type="button" class="kp-key" onclick="kpPress('0')">0</button>
+        <button type="button" class="kp-key kp-del" onclick="kpDel()">&#9003;</button>
+      </div>
+    </div>`;
+
   document.getElementById('inputFields').innerHTML = html;
+
   setTimeout(() => {
-    const fId = document.getElementById('fAnimalId');
+    const fId   = document.getElementById('fAnimalId');
+    const fPeso = document.getElementById('fPeso');
     if (!fId) return;
-    fId.focus();
-    // Interceptar Enter del lector RFID — no cierra el teclado
-    // Forzar teclado virtual después de cada lectura RFID
-    function forceKeyboard(el) {
-      if (!el) return;
-      // Blur y refocus con delay para forzar reaparición del teclado virtual
-      el.blur();
-      setTimeout(() => {
-        el.focus();
-        // Truco adicional: cambiar readonly y volver para forzar teclado en iOS/Android
-        el.removeAttribute('readonly');
-        el.click();
-      }, 100);
+
+    // El keypad escribe en el campo que esté activo
+    kpSetTarget(fId, 'ID ANIMAL');
+    fId.addEventListener('focus', () => kpSetTarget(fId, 'ID ANIMAL'));
+    if (fPeso) fPeso.addEventListener('focus', () => kpSetTarget(fPeso, 'PESO (KG)'));
+
+    // ── Detección de lectura del bastón ──
+    // El bastón "tipea" muy rápido. Si los caracteres llegan a menos de
+    // 60ms uno del otro, es una lectura automática, no una persona.
+    let lastKey = 0, esLectura = false;
+
+    fId.addEventListener('keydown', (e) => {
+      const ahora = Date.now();
+      if (e.key !== 'Enter' && e.keyCode !== 13) {
+        if (ahora - lastKey < 60) esLectura = true;
+        lastKey = ahora;
+        return;
+      }
+      // Enter: fin de lectura del bastón (o Enter manual)
+      e.preventDefault();
+      finLecturaId();
+    });
+
+    // Si el bastón no manda Enter, cerramos por silencio
+    fId.addEventListener('input', () => {
+      clearTimeout(fId._t);
+      if (!esLectura) return;
+      fId._t = setTimeout(() => { esLectura = false; finLecturaId(); }, 220);
+    });
+
+    function finLecturaId() {
+      esLectura = false;
+      if (!fId.value.trim()) return;
+      if (fPeso) {
+        kpSetTarget(fPeso, 'PESO (KG)');   // pesaje: pasa a peso
+      } else {
+        addRecord();                        // resto: registra directo
+      }
     }
 
-    fId.addEventListener('keydown', function(e) {
-      if (e.key !== 'Enter' && e.keyCode !== 13) return;
-      e.preventDefault();
-      const peso = document.getElementById('fPeso');
-      if (peso) {
-        // Pesaje: Enter en ID mueve al campo de peso y fuerza teclado
-        setTimeout(() => { peso.focus(); peso.select(); forceKeyboard(peso); }, 50);
-      } else {
-        // Sanitación, preñez, servicio: registra y vuelve al ID con teclado forzado
-        addRecord().then ? addRecord().then(() => setTimeout(() => forceKeyboard(fId), 300))
-                        : (addRecord(), setTimeout(() => forceKeyboard(fId), 300));
-      }
-    });
-
-    // También forzar teclado al recibir input del bastón (evento input)
-    fId.addEventListener('input', function() {
-      clearTimeout(fId._rfidTimer);
-      fId._rfidTimer = setTimeout(() => {
-        // Si el valor tiene largo suficiente (chip tiene 10+ chars), asumir lectura RFID completa
-        if (fId.value.length >= 8) {
-          const peso = document.getElementById('fPeso');
-          if (peso) {
-            setTimeout(() => { peso.focus(); peso.select(); forceKeyboard(peso); }, 150);
-          }
-        }
-      }, 200);
-    });
-
-    // Enter en campo de peso → registrar animal y volver al ID
-    const fPeso = document.getElementById('fPeso');
     if (fPeso) {
-      fPeso.addEventListener('keydown', function(e) {
+      fPeso.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.keyCode !== 13) return;
         e.preventDefault();
         addRecord();
-        setTimeout(() => forceKeyboard(fId), 400);
       });
     }
   }, 80);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TECLADO NUMÉRICO EN PANTALLA
+   El bastón RFID se conecta como teclado Bluetooth y el sistema
+   oculta el teclado virtual. Este teclado es parte de la página,
+   así que no lo puede ocultar.
+   ═══════════════════════════════════════════════════════════ */
+let kpTarget = null;
+
+function kpSetTarget(el, nombre) {
+  if (!el) return;
+  kpTarget = el;
+  const lbl = document.getElementById('kpTargetName');
+  if (lbl) lbl.textContent = nombre;
+  // Marcar visualmente el campo activo
+  document.querySelectorAll('#inputFields input').forEach(i => i.style.borderColor = '');
+  el.style.borderColor = 'var(--accent)';
+}
+
+function kpPress(ch) {
+  if (!kpTarget) return;
+  if (ch === '.' && (kpTarget.value.includes('.') || kpTarget.id === 'fAnimalId')) return;
+  kpTarget.value += ch;
+  kpTarget.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function kpDel() {
+  if (!kpTarget) return;
+  kpTarget.value = kpTarget.value.slice(0, -1);
+  kpTarget.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function toggleKeypad() {
+  const g = document.getElementById('keypadGrid');
+  const b = document.querySelector('.keypad-toggle');
+  if (!g || !b) return;
+  const oculto = g.style.display === 'none';
+  g.style.display = oculto ? 'grid' : 'none';
+  b.textContent = oculto ? 'Ocultar' : 'Mostrar';
 }
 
 /* ── Add record ── */
@@ -859,7 +955,11 @@ async function addRecord() {
     document.getElementById('fResultado').value = '';
   }
   if (comentario) comentario.value = '';
-  document.getElementById('fAnimalId').focus();
+
+  // El teclado en pantalla vuelve al campo ID para el próximo animal
+  const fIdEl = document.getElementById('fAnimalId');
+  fIdEl.focus();
+  kpSetTarget(fIdEl, 'ID ANIMAL');
 
   await loadSession(currentSessId);
 }
@@ -1430,4 +1530,3 @@ initDB()
 
 </body>
 </html>
-
