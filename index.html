@@ -438,7 +438,7 @@
 <div class="header">
   <div class="header-logo">
     <div class="header-title">TIGGA CORRAL</div>
-    <div class="header-sub">GESTIÓN DE CORRAL</div>
+    <div class="header-sub">GESTIÓN DE CORRAL <span id="appVer" style="opacity:0.5;font-size:9px"></span></div>
   </div>
   <div id="headerAction"></div>
 </div>
@@ -544,6 +544,12 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- BANNER DE ACTUALIZACIÓN -->
+<div id="updateBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#1a1f2e;color:#fff;padding:10px 16px;align-items:center;justify-content:space-between;font-family:'Courier New',monospace;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,0.3)">
+  <span>✨ Nueva versión disponible</span>
+  <button id="updateBtn" style="background:#e85500;color:#fff;border:none;padding:6px 16px;font-family:'Courier New',monospace;font-size:12px;font-weight:700;cursor:pointer;border-radius:3px;letter-spacing:1px">ACTUALIZAR</button>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -1515,6 +1521,7 @@ function toast(msg, isError = false) {
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
+const APP_VERSION = 'v1.5';
 const API_URL = 'https://api.fieldtraz.app';
 const GRACE_DAYS = 10;
 const REVALIDA_DIAS = 10;  // revalida silenciosamente cada 10 días si hay internet
@@ -1657,6 +1664,8 @@ initDB()
     if (checkActivation()) {
       loadHome();
       revalidarSilencioso();  // chequeo en segundo plano, no bloquea
+      const ver = document.getElementById('appVer');
+      if (ver) ver.textContent = APP_VERSION;
     }
   })
   .catch(err => {
@@ -1668,9 +1677,43 @@ initDB()
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('TIGGA Corral offline OK'))
+          .then(reg => {
+            // Detectar cuando hay una versión nueva esperando
+            reg.addEventListener('updatefound', () => {
+              const nuevo = reg.installing;
+              if (!nuevo) return;
+              nuevo.addEventListener('statechange', () => {
+                // Hay versión nueva instalada y ya había una activa → avisar
+                if (nuevo.state === 'installed' && navigator.serviceWorker.controller) {
+                  mostrarAvisoUpdate(reg);
+                }
+              });
+            });
+            // Chequear updates cada vez que se abre y cada 30 min
+            reg.update();
+            setInterval(() => reg.update(), 30 * 60 * 1000);
+          })
           .catch(e => console.warn('SW:', e));
+
+        // Cuando el SW nuevo toma control, recargar una vez
+        let recargado = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (recargado) return;
+          recargado = true;
+          window.location.reload();
+        });
       });
+    }
+
+    function mostrarAvisoUpdate(reg) {
+      const banner = document.getElementById('updateBanner');
+      if (!banner) return;
+      banner.style.display = 'flex';
+      document.getElementById('updateBtn').onclick = () => {
+        // Pedir al SW nuevo que se active ya
+        if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+        banner.style.display = 'none';
+      };
     }
   </script>
 
