@@ -862,7 +862,9 @@ function buildInputArea(type) {
       ['fPeso',       'PESO (KG)'],
       ['fComentario', 'COMENTARIO'],
       ['fToro',       'TORO / SEMENTAL'],
-      ['fObs',        'OBSERVACIÓN']
+      ['fObs',        'OBSERVACIÓN'],
+      ['sanProducto', 'PRODUCTO'],
+      ['sanLote',     'LOTE']
     ], ['fAnimalId', 'ID ANIMAL']);
 
     // ── Detección de lectura del bastón ──
@@ -892,10 +894,27 @@ function buildInputArea(type) {
     function finLecturaId() {
       esLectura = false;
       if (!fId.value.trim()) return;
-      if (fPeso) {
-        kpSetTarget(fPeso, 'PESO (KG)');   // pesaje: pasa a peso
+      // Tras escanear, el foco pasa al campo que corresponde a cada tarea.
+      // El registro final lo hace el operario con el botón, así puede
+      // completar los datos de cada tarea sin que se registre solo.
+      if (type === 'pesaje') {
+        const el = document.getElementById('fPeso');
+        if (el) { el.focus(); el.select(); kpSetTarget(el, 'PESO (KG)'); }
+      } else if (type === 'servicio') {
+        const el = document.getElementById('fToro');
+        if (el) { el.focus(); kpSetTarget(el, 'TORO / SEMENTAL'); }
+      } else if (type === 'mortandad') {
+        const el = document.getElementById('fCausa');
+        if (el) el.focus();   // selector: no usa teclado
+      } else if (type === 'sanitacion') {
+        const el = document.getElementById('fComentario');
+        if (el) { el.focus(); kpSetTarget(el, 'COMENTARIO'); }
+      } else if (type === 'prenez') {
+        // preñez: se registra tras elegir el resultado con los botones
+        toast('Seleccioná el resultado y tocá Registrar');
       } else {
-        addRecord();                        // resto: registra directo
+        // venta / auditoría: no hay más datos, registra directo
+        addRecord();
       }
     }
 
@@ -906,6 +925,16 @@ function buildInputArea(type) {
         addRecord();
       });
     }
+
+    // En servicio y sanitación, Enter en el último campo también registra
+    ['fToro', 'fComentario'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.keyCode !== 13) return;
+        e.preventDefault();
+        addRecord();
+      });
+    });
   }, 80);
 }
 
