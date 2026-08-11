@@ -1517,6 +1517,8 @@ function toast(msg, isError = false) {
    ═══════════════════════════════════════════════════════════ */
 const API_URL = 'https://api.fieldtraz.app';
 const GRACE_DAYS = 10;
+const REVALIDA_DIAS = 10;  // revalida silenciosamente cada 10 días si hay internet
+const AVISO_DIAS = 15;     // empieza a avisar cuando faltan 15 días o menos
 
 function getDeviceId() {
   let id = localStorage.getItem('tc_device_id');
@@ -1533,7 +1535,11 @@ function getLicenseStatus() {
   const now = new Date(); now.setHours(0,0,0,0);
   const venc = new Date(act.vencimiento);
   const diff = Math.floor((venc - now) / 86400000);
-  if (diff >= 0) return 'active';
+  if (diff >= 0) {
+    // Activa, pero avisar si está por vencer
+    if (diff <= AVISO_DIAS) return { porVencer: diff };
+    return 'active';
+  }
   if (diff >= -GRACE_DAYS) return { grace: Math.abs(diff) };
   return 'expired';
 }
@@ -1553,7 +1559,7 @@ async function activarApp() {
     });
     const data = await resp.json();
     if (data.ok) {
-      localStorage.setItem('tc_activation', JSON.stringify({ token, device_id: getDeviceId(), nombre: data.nombre, vencimiento: data.vencimiento, activatedAt: new Date().toISOString() }));
+      localStorage.setItem('tc_activation', JSON.stringify({ token, device_id: getDeviceId(), nombre: data.nombre, vencimiento: data.vencimiento, activatedAt: new Date().toISOString(), ultimaValidacion: new Date().toISOString() }));
       document.getElementById('actOverlay').style.display = 'none';
       toast('✓ TIGGA Corral activado — ' + data.nombre);
       loadHome();
@@ -1575,17 +1581,72 @@ function checkActivation() {
   }
   if (status === 'expired') { document.getElementById('expOverlay').style.display = 'flex'; return false; }
   if (typeof status === 'object' && status.grace !== undefined) {
+    // Ya venció, en período de gracia
     const banner = document.getElementById('graceBanner');
-    document.getElementById('graceMsg').textContent = `⚠ Tu licencia venció hace ${status.grace} día${status.grace>1?'s':''}. Tenés ${GRACE_DAYS - status.grace} días para renovar.`;
+    document.getElementById('graceMsg').textContent = `⚠ Tu licencia venció hace ${status.grace} día${status.grace>1?'s':''}. Tenés ${GRACE_DAYS - status.grace} día${(GRACE_DAYS-status.grace)>1?'s':''} para renovar.`;
+    banner.style.background = '#fff3e6';
+    banner.style.borderBottomColor = '#e85500';
+    banner.style.display = 'flex';
+  } else if (typeof status === 'object' && status.porVencer !== undefined) {
+    // Todavía activa pero próxima a vencer
+    const banner = document.getElementById('graceBanner');
+    const d = status.porVencer;
+    let txt;
+    if (d === 0)      txt = '⏰ Tu licencia vence HOY. Contactá para renovar y no perder el servicio.';
+    else if (d === 1) txt = '⏰ Tu licencia vence MAÑANA. Contactá para renovar.';
+    else              txt = `⏰ Tu licencia vence en ${d} días. Contactá para renovar a tiempo.`;
+    document.getElementById('graceMsg').textContent = txt;
+    // Color más suave (amarillo) para aviso preventivo, no alarmante
+    banner.style.background = '#fffae6';
+    banner.style.borderBottomColor = '#e0a800';
     banner.style.display = 'flex';
   }
   return true;
 }
 
+// Revalidación silenciosa: cada REVALIDA_DIAS, si hay internet,
+// consulta al servidor por si la licencia fue suspendida o vencida.
+// Nunca interrumpe el trabajo: si no hay señal, no hace nada.
+async function revalidarSilencioso() {
+  const act = JSON.parse(localStorage.getItem('tc_activation') || 'null');
+  if (!act || !act.token) return;
+
+  const ultima = act.ultimaValidacion ? new Date(act.ultimaValidacion) : new Date(act.activatedAt || 0);
+  const dias = (Date.now() - ultima.getTime()) / 86400000;
+  if (dias < REVALIDA_DIAS) return;               // todavía no toca
+  if (!navigator.onLine) return;                  // sin internet, se pospone
+
+  try {
+    const url = `${API_URL}/corral/validar?token=${encodeURIComponent(act.token)}&device_id=${encodeURIComponent(getDeviceId())}`;
+    const resp = await fetch(url, { method: 'GET' });
+    const data = await resp.json();
+
+    if (data.ok) {
+      // Renovar marca de tiempo y actualizar vencimiento por si se renovó en el servidor
+      act.ultimaValidacion = new Date().toISOString();
+      if (data.vencimiento) act.vencimiento = data.vencimiento;
+      localStorage.setItem('tc_activation', JSON.stringify(act));
+    } else if (['licencia_suspendida','licencia_vencida','token_invalido','token_no_autorizado_para_corral'].includes(data.error)) {
+      // La licencia ya no es válida → limpiar activación y bloquear
+      localStorage.removeItem('tc_activation');
+      location.reload();
+    }
+    // Cualquier otro error (red, server) → se ignora, reintenta la próxima vez
+  } catch (e) {
+    // Sin conexión o error temporal: no hacer nada, seguir trabajando
+  }
+}
+
 function contactarRenovacion() {
   const act = JSON.parse(localStorage.getItem('tc_activation') || '{}');
-  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral.\nEstancia: ${act.nombre||'-'}\nDevice ID: ${getDeviceId()}`);
-  window.open(`https://wa.me/?text=${msg}`, '_blank');
+  let venceTxt = '';
+  if (act.vencimiento) {
+    const d = Math.floor((new Date(act.vencimiento) - new Date()) / 86400000);
+    if (d >= 0) venceTxt = `\nVence en ${d} día${d!==1?'s':''} (${new Date(act.vencimiento).toLocaleDateString('es-PY')})`;
+    else venceTxt = `\nVenció hace ${Math.abs(d)} día${Math.abs(d)!==1?'s':''}`;
+  }
+  const msg = encodeURIComponent(`Hola, necesito renovar mi licencia de TIGGA Corral.\nEstancia: ${act.nombre||'-'}${venceTxt}\nDevice ID: ${getDeviceId()}`);
+  window.open(`https://wa.me/595972281810?text=${msg}`, '_blank');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1593,7 +1654,10 @@ function contactarRenovacion() {
    ═══════════════════════════════════════════════════════════ */
 initDB()
   .then(() => {
-    if (checkActivation()) loadHome();
+    if (checkActivation()) {
+      loadHome();
+      revalidarSilencioso();  // chequeo en segundo plano, no bloquea
+    }
   })
   .catch(err => {
     document.body.innerHTML = `<div style="padding:24px;color:#c00;font-family:monospace">
@@ -1631,7 +1695,10 @@ initDB()
 <!-- GRACE PERIOD BANNER -->
 <div class="grace-banner" id="graceBanner" style="display:none">
   <span id="graceMsg">⚠ Tu licencia venció. Tenés X días para renovar.</span>
-  <button class="grace-close" onclick="document.getElementById('graceBanner').style.display='none'">×</button>
+  <span style="display:flex;gap:8px;align-items:center">
+    <button onclick="contactarRenovacion()" style="background:#25d366;color:#fff;border:none;padding:5px 12px;font-family:'Courier New',monospace;font-size:11px;font-weight:700;cursor:pointer;border-radius:3px;letter-spacing:0.5px">💬 RENOVAR</button>
+    <button class="grace-close" onclick="document.getElementById('graceBanner').style.display='none'">×</button>
+  </span>
 </div>
 
 <!-- EXPIRED OVERLAY -->
