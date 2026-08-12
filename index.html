@@ -447,9 +447,38 @@
      PANTALLA: INICIO
      ════════════════════════════════════ -->
 <div id="screenHome" class="screen active">
-  <p class="section-label">Sesiones de trabajo</p>
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <p class="section-label">Sesiones de trabajo</p>
+    <button onclick="abrirAjustes()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-size:16px;padding:4px 10px;cursor:pointer;border-radius:4px" title="Ajustes">⚙</button>
+  </div>
   <div id="sessionList"></div>
   <button class="fab" onclick="goNewSession()" title="Nueva sesión">+</button>
+</div>
+
+<!-- MODAL AJUSTES -->
+<div class="act-overlay" id="ajustesOverlay" style="display:none">
+  <div style="background:#fff;max-width:400px;width:90%;padding:24px;border-radius:8px">
+    <div style="font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px">AJUSTES</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:20px">// configuración de este dispositivo</div>
+
+    <div style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--text)">Teclado en pantalla</div>
+          <div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-top:3px">Actívalo si usás lector de chip (bastón). Desactivalo para usar el teclado normal del celular.</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0">
+          <input type="checkbox" id="switchTeclado" onchange="toggleTecladoPref(this.checked)" style="opacity:0;width:0;height:0">
+          <span id="switchSlider" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:28px;transition:.2s"></span>
+          <span id="switchKnob" style="position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s"></span>
+        </label>
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--text-dim);text-align:center;margin-bottom:16px">TIGGA Corral <span id="ajustesVer"></span></div>
+
+    <button class="act-btn" onclick="cerrarAjustes()">LISTO</button>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════
@@ -641,14 +670,19 @@ function goNewSession() {
   setHeaderAction(`<button class="back-btn" onclick="goHome()">← Inicio</button>`);
   showScreen('screenNew');
 
-  // Teclado en pantalla para esta pantalla
-  kpMount('kpSlotNew');
-  kpBind([
-    ['newName',     'NOMBRE DE SESIÓN'],
-    ['sanProducto', 'PRODUCTO'],
-    ['sanDosis',    'DOSIS (ML)'],
-    ['sanLote',     'LOTE']
-  ], ['newName', 'NOMBRE DE SESIÓN']);
+  // Teclado en pantalla solo si está activado en este dispositivo
+  if (usaTecladoApp()) {
+    kpMount('kpSlotNew');
+    kpBind([
+      ['newName',     'NOMBRE DE SESIÓN'],
+      ['sanProducto', 'PRODUCTO'],
+      ['sanDosis',    'DOSIS (ML)'],
+      ['sanLote',     'LOTE']
+    ], ['newName', 'NOMBRE DE SESIÓN']);
+  } else {
+    const slot = document.getElementById('kpSlotNew');
+    if (slot) slot.innerHTML = '';
+  }
   setTimeout(() => document.getElementById('newName').focus(), 60);
 }
 
@@ -855,17 +889,27 @@ function buildInputArea(type) {
     const fPeso = document.getElementById('fPeso');
     if (!fId) return;
 
-    // Montar el teclado y conectar los campos de esta pantalla
-    kpMount('kpSlotSession');
-    kpBind([
-      ['fAnimalId',   'ID ANIMAL'],
-      ['fPeso',       'PESO (KG)'],
-      ['fComentario', 'COMENTARIO'],
-      ['fToro',       'TORO / SEMENTAL'],
-      ['fObs',        'OBSERVACIÓN'],
-      ['sanProducto', 'PRODUCTO'],
-      ['sanLote',     'LOTE']
-    ], ['fAnimalId', 'ID ANIMAL']);
+    // Montar el teclado propio SOLO si está activado en este dispositivo
+    const conTeclado = usaTecladoApp();
+    if (conTeclado) {
+      kpMount('kpSlotSession');
+      kpBind([
+        ['fAnimalId',   'ID ANIMAL'],
+        ['fPeso',       'PESO (KG)'],
+        ['fComentario', 'COMENTARIO'],
+        ['fToro',       'TORO / SEMENTAL'],
+        ['fObs',        'OBSERVACIÓN'],
+        ['sanProducto', 'PRODUCTO'],
+        ['sanLote',     'LOTE']
+      ], ['fAnimalId', 'ID ANIMAL']);
+      // Sin teclado del sistema: usa el propio
+      fId.setAttribute('inputmode', 'none');
+    } else {
+      // Sin teclado propio: limpiar el slot y usar el teclado del sistema
+      const slot = document.getElementById('kpSlotSession');
+      if (slot) slot.innerHTML = '';
+      fId.setAttribute('inputmode', 'numeric');
+    }
 
     // ── Detección de lectura del bastón ──
     // El bastón "tipea" muy rápido. Si los caracteres llegan a menos de
@@ -899,16 +943,16 @@ function buildInputArea(type) {
       // completar los datos de cada tarea sin que se registre solo.
       if (type === 'pesaje') {
         const el = document.getElementById('fPeso');
-        if (el) { el.focus(); el.select(); kpSetTarget(el, 'PESO (KG)'); }
+        if (el) { el.focus(); el.select(); if (conTeclado) kpSetTarget(el, 'PESO (KG)'); }
       } else if (type === 'servicio') {
         const el = document.getElementById('fToro');
-        if (el) { el.focus(); kpSetTarget(el, 'TORO / SEMENTAL'); }
+        if (el) { el.focus(); if (conTeclado) kpSetTarget(el, 'TORO / SEMENTAL'); }
       } else if (type === 'mortandad') {
         const el = document.getElementById('fCausa');
         if (el) el.focus();   // selector: no usa teclado
       } else if (type === 'sanitacion') {
         const el = document.getElementById('fComentario');
-        if (el) { el.focus(); kpSetTarget(el, 'COMENTARIO'); }
+        if (el) { el.focus(); if (conTeclado) kpSetTarget(el, 'COMENTARIO'); }
       } else if (type === 'prenez') {
         // preñez: se registra tras elegir el resultado con los botones
         toast('Seleccioná el resultado y tocá Registrar');
@@ -938,7 +982,7 @@ function buildInputArea(type) {
 
     // Foco automático en el ID: el lector puede escanear sin tocar la celda
     fId.focus();
-    kpSetTarget(fId, 'ID ANIMAL');
+    if (conTeclado) kpSetTarget(fId, 'ID ANIMAL');
   }, 80);
 }
 
@@ -1551,7 +1595,40 @@ function toast(msg, isError = false) {
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
-const APP_VERSION = 'v1.5';
+const APP_VERSION = 'v1.7';
+
+// Preferencia por dispositivo: usar el teclado propio de la app.
+// Por defecto ACTIVADO (pensado para uso con bastón lector).
+function abrirAjustes() {
+  const sw = document.getElementById('switchTeclado');
+  if (sw) { sw.checked = usaTecladoApp(); pintarSwitch(sw.checked); }
+  const ver = document.getElementById('ajustesVer');
+  if (ver) ver.textContent = APP_VERSION;
+  document.getElementById('ajustesOverlay').style.display = 'flex';
+}
+function cerrarAjustes() {
+  document.getElementById('ajustesOverlay').style.display = 'none';
+}
+function pintarSwitch(on) {
+  const slider = document.getElementById('switchSlider');
+  const knob = document.getElementById('switchKnob');
+  if (!slider || !knob) return;
+  slider.style.background = on ? 'var(--accent)' : '#ccc';
+  knob.style.left = on ? '27px' : '3px';
+}
+function toggleTecladoPref(on) {
+  setTecladoApp(on);
+  pintarSwitch(on);
+  // Si estamos dentro de una sesión, refrescar para aplicar el cambio
+  if (currentSessId) loadSession(currentSessId);
+}
+
+function usaTecladoApp() {
+  return localStorage.getItem('tc_teclado') !== 'off';
+}
+function setTecladoApp(on) {
+  localStorage.setItem('tc_teclado', on ? 'on' : 'off');
+}
 const API_URL = 'https://api.fieldtraz.app';
 const GRACE_DAYS = 10;
 const REVALIDA_DIAS = 10;  // revalida silenciosamente cada 10 días si hay internet
@@ -1612,8 +1689,10 @@ function checkActivation() {
   const status = getLicenseStatus();
   if (status === 'none') {
     document.getElementById('actOverlay').style.display = 'flex';
-    kpMount('kpSlotAct');
-    kpBind([['actCodeInput', 'TOKEN']], ['actCodeInput', 'TOKEN']);
+    if (usaTecladoApp()) {
+      kpMount('kpSlotAct');
+      kpBind([['actCodeInput', 'TOKEN']], ['actCodeInput', 'TOKEN']);
+    }
     return false;
   }
   if (status === 'expired') { document.getElementById('expOverlay').style.display = 'flex'; return false; }
