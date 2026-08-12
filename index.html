@@ -781,7 +781,7 @@ function buildInputArea(type) {
   let html = `
     <div class="form-group">
       <label>ID Animal — chip RFID o caravana</label>
-      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric" style="font-size:20px;font-weight:700;padding:16px 12px;">
+      <input id="fAnimalId" type="text" placeholder="Escanear RFID o ingresar número" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="none" style="font-size:20px;font-weight:700;padding:16px 12px;">
     </div>`;
 
   if (type === 'pesaje') {
@@ -935,6 +935,10 @@ function buildInputArea(type) {
         addRecord();
       });
     });
+
+    // Foco automático en el ID: el lector puede escanear sin tocar la celda
+    fId.focus();
+    kpSetTarget(fId, 'ID ANIMAL');
   }, 80);
 }
 
@@ -1099,11 +1103,8 @@ async function addRecord() {
   }
   if (comentario) comentario.value = '';
 
-  // El teclado en pantalla vuelve al campo ID para el próximo animal
-  const fIdEl = document.getElementById('fAnimalId');
-  fIdEl.focus();
-  kpSetTarget(fIdEl, 'ID ANIMAL');
-
+  // loadSession reconstruye la pantalla; el foco al ID se restablece
+  // dentro de buildInputArea (autoFocusId) para no perderlo.
   await loadSession(currentSessId);
 }
 
@@ -1550,7 +1551,7 @@ function toast(msg, isError = false) {
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
-const APP_VERSION = 'v1.6';
+const APP_VERSION = 'v1.5';
 const API_URL = 'https://api.fieldtraz.app';
 const GRACE_DAYS = 10;
 const REVALIDA_DIAS = 10;  // revalida silenciosamente cada 10 días si hay internet
