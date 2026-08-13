@@ -1109,6 +1109,31 @@ async function addRecord() {
   const animalId = document.getElementById('fAnimalId').value.trim();
   if (!animalId) { toast('Ingresá el ID del animal', true); return; }
 
+  // ── Alerta de número repetido (dentro de esta sesión) ──
+  // Aviso, no bloqueo: el operario decide si registra igual. Suena un
+  // beep además del cartel porque con el bastón no mira la pantalla.
+  const previos = await dbGetByIdx('records', 'sessionId', currentSessId);
+  const dup = previos.find(r => String(r.animalId).trim().toLowerCase() === animalId.toLowerCase());
+  if (dup) {
+    beepAlerta();
+    const veces = previos.filter(r => String(r.animalId).trim().toLowerCase() === animalId.toLowerCase()).length;
+    const hora = new Date(dup.ts).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+    const ok = confirm(`⚠ NÚMERO REPETIDO\n\nEl animal ${animalId} ya fue registrado en esta sesión (primera vez a las ${hora}${veces > 1 ? `, ya van ${veces} veces` : ''}).\n\n¿Registrarlo de nuevo igual?`);
+    if (!ok) {
+      // Descartar este ingreso y dejar listo el ID para el próximo escaneo
+      const fId = document.getElementById('fAnimalId');
+      const fPeso = document.getElementById('fPeso');
+      if (fId) fId.value = '';
+      if (fPeso) fPeso.value = '';
+      document.querySelectorAll('.prenez-btn').forEach(b => b.className = 'prenez-btn');
+      const fRes = document.getElementById('fResultado');
+      if (fRes) fRes.value = '';
+      if (fId) { fId.focus(); if (usaTecladoApp()) kpSetTarget(fId, 'ID ANIMAL'); }
+      toast('↩ Repetido — no registrado', true);
+      return;
+    }
+  }
+
   const rec = { sessionId: currentSessId, animalId, ts: new Date().toISOString(), data: {} };
 
   if (sess.type === 'pesaje') {
@@ -1591,11 +1616,36 @@ function toast(msg, isError = false) {
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
+/* ── Beep de alerta (número repetido) ──
+   Dos pulsos cortos con Web Audio. El operario trabaja con el bastón
+   sin mirar la pantalla, así que el aviso sonoro es clave. */
+let _audioCtx = null;
+function beepAlerta() {
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const ctx = _audioCtx;
+    [0, 0.20].forEach(t => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'square';
+      o.frequency.value = 880;
+      const t0 = ctx.currentTime + t;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+      o.start(t0);
+      o.stop(t0 + 0.17);
+    });
+  } catch (e) { /* sin audio disponible: el cartel igual avisa */ }
+}
+
 
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
-const APP_VERSION = 'v1.7';
+const APP_VERSION = 'v1.8';
 
 // Preferencia por dispositivo: usar el teclado propio de la app.
 // Por defecto ACTIVADO (pensado para uso con bastón lector).
