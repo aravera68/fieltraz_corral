@@ -7,7 +7,11 @@
    Así las actualizaciones de código llegan solas, sin tener
    que subir el número de versión en cada cambio.
    ═══════════════════════════════════════════════════════════ */
-const CACHE = 'tigga-corral-v6';
+const CACHE = 'tigga-corral-v7';
+
+// Dominio del backend: las llamadas a la API (licencia, sync, etc.)
+// nunca deben cachearse — siempre tienen que ir a la red.
+const API_HOST = 'api.fieldtraz.app';
 
 const ARCHIVOS = [
   './',
@@ -49,6 +53,9 @@ self.addEventListener('fetch', e => {
 
   // Solo manejamos GET; el resto va directo a la red
   if (req.method !== 'GET') return;
+
+  // Llamadas a la API del backend: nunca cachear, siempre red.
+  if (new URL(req.url).hostname === API_HOST) return;
 
   if (esHTML(req)) {
     // NETWORK-FIRST para el HTML: siempre lo más nuevo si hay señal
