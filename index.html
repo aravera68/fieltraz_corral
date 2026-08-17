@@ -126,6 +126,9 @@
       outline: none; appearance: none; border-radius: 0;
     }
     input:focus, select:focus { border-color: var(--accent); }
+    /* Campo de peso destacado (sesión de pesaje) */
+    #fPeso::placeholder { color: rgba(255,255,255,.55); font-weight: 700; }
+    #fPeso:focus { border: none; box-shadow: 0 0 0 3px var(--accent-dim); }
     select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%236b7280' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
     select option { background: #fff; color: #1a1f2e; }
     .row { display: flex; gap: 10px; }
@@ -460,6 +463,12 @@
   <div style="background:#fff;max-width:400px;width:90%;padding:24px;border-radius:8px">
     <div style="font-size:16px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px">AJUSTES</div>
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:20px">// configuración de este dispositivo</div>
+
+    <!-- DATOS DE LA LICENCIA -->
+    <div id="ajustesLicencia" style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;color:var(--accent);letter-spacing:.5px;margin-bottom:10px">DATOS DE LA LICENCIA</div>
+      <div id="licInfo" style="font-size:12px;color:var(--text);line-height:1.9"></div>
+    </div>
 
     <div style="border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -822,7 +831,8 @@ function buildInputArea(type) {
     html += `
       <div class="form-group">
         <label>Peso (kg)</label>
-        <input id="fPeso" type="number" placeholder="0.0" step="0.1" min="0" inputmode="decimal">
+        <input id="fPeso" type="number" placeholder="0.0" step="0.1" min="0" inputmode="decimal"
+          style="background:var(--accent);color:#fff;font-size:40px;font-weight:900;text-align:center;height:auto;padding:16px 12px;border:none;letter-spacing:2px;caret-color:#fff">
       </div>`;
   } else if (type === 'servicio') {
     html += `
@@ -1645,7 +1655,7 @@ function beepAlerta() {
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
-const APP_VERSION = 'v1.9';
+const APP_VERSION = 'v2.0';
 
 // Preferencia por dispositivo: usar el teclado propio de la app.
 // Por defecto ACTIVADO (pensado para uso con bastón lector).
@@ -1654,7 +1664,72 @@ function abrirAjustes() {
   if (sw) { sw.checked = usaTecladoApp(); pintarSwitch(sw.checked); }
   const ver = document.getElementById('ajustesVer');
   if (ver) ver.textContent = APP_VERSION;
+  pintarLicencia();
   document.getElementById('ajustesOverlay').style.display = 'flex';
+}
+
+function pintarLicencia() {
+  const cont = document.getElementById('licInfo');
+  const bloque = document.getElementById('ajustesLicencia');
+  if (!cont) return;
+  const act = JSON.parse(localStorage.getItem('tc_activation') || 'null');
+  if (!act) {
+    if (bloque) bloque.style.display = 'none';
+    return;
+  }
+  if (bloque) bloque.style.display = 'block';
+
+  const fmt = (iso) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d) ? '—' : d.toLocaleDateString('es-PY');
+  };
+
+  let estadoTxt = '', estadoColor = 'var(--text-dim)', venceLinea = '—';
+  if (act.vencimiento) {
+    const dias = Math.floor((new Date(act.vencimiento) - new Date()) / 86400000);
+    venceLinea = fmt(act.vencimiento);
+    if (dias > AVISO_DIAS)      { estadoTxt = 'Activa';    estadoColor = '#2e7d32'; venceLinea += ` · faltan ${dias} días`; }
+    else if (dias >= 0)         { estadoTxt = 'Por vencer'; estadoColor = '#e85500'; venceLinea += ` · ${dias === 0 ? 'vence hoy' : 'faltan ' + dias + ' día' + (dias!==1?'s':'')}`; }
+    else if (dias >= -GRACE_DAYS){ estadoTxt = 'Vencida (gracia)'; estadoColor = '#e85500'; venceLinea += ` · venció hace ${Math.abs(dias)} día${Math.abs(dias)!==1?'s':''}`; }
+    else                        { estadoTxt = 'Vencida';   estadoColor = '#c62828'; venceLinea += ` · venció hace ${Math.abs(dias)} días`; }
+  }
+
+  let tokenTxt = '—';
+  if (act.token && act.token.length >= 8) {
+    tokenTxt = act.token.slice(0, 4) + '…' + act.token.slice(-4);
+  } else if (act.token) {
+    tokenTxt = act.token;
+  }
+
+  const dev = getDeviceId();
+  const row = (label, val, extra = '') =>
+    `<div style="display:flex;justify-content:space-between;gap:10px"><span style="color:var(--text-dim)">${label}</span><span style="text-align:right;font-weight:600">${val}${extra}</span></div>`;
+
+  cont.innerHTML =
+    row('Establecimiento', act.nombre || '—') +
+    row('Estado', `<span style="color:${estadoColor}">${estadoTxt}</span>`) +
+    row('Vence', venceLinea) +
+    row('Activada', fmt(act.activatedAt)) +
+    row('Última verificación', fmt(act.ultimaValidacion)) +
+    row('Token', `<span style="font-family:monospace">${tokenTxt}</span>`) +
+    `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><span style="color:var(--text-dim)">ID dispositivo</span><span style="text-align:right;font-weight:600;font-family:monospace;font-size:11px">${dev} <button onclick="copiarSoporte()" style="background:none;border:1px solid var(--border);color:var(--accent);font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;margin-left:4px" title="Copiar datos para soporte">copiar</button></span></div>`;
+}
+
+function copiarSoporte() {
+  const act = JSON.parse(localStorage.getItem('tc_activation') || '{}');
+  let tokenParcial = '-';
+  if (act.token && act.token.length >= 8) tokenParcial = act.token.slice(0,4) + '…' + act.token.slice(-4);
+  else if (act.token) tokenParcial = act.token;
+  const texto = `TIGGA Corral — Datos de soporte\nEstablecimiento: ${act.nombre || '-'}\nVence: ${act.vencimiento ? new Date(act.vencimiento).toLocaleDateString('es-PY') : '-'}\nActivada: ${act.activatedAt ? new Date(act.activatedAt).toLocaleDateString('es-PY') : '-'}\nÚltima verificación: ${act.ultimaValidacion ? new Date(act.ultimaValidacion).toLocaleDateString('es-PY') : '-'}\nToken: ${tokenParcial}\nDevice ID: ${getDeviceId()}\nApp: ${APP_VERSION}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(
+      () => toast('✓ Datos de soporte copiados'),
+      () => toast('No se pudo copiar', true)
+    );
+  } else {
+    toast('Copiado no disponible en este navegador', true);
+  }
 }
 function cerrarAjustes() {
   document.getElementById('ajustesOverlay').style.display = 'none';
