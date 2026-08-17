@@ -1645,7 +1645,7 @@ function beepAlerta() {
 /* ═══════════════════════════════════════════════════════════
    ACTIVATION SYSTEM
    ═══════════════════════════════════════════════════════════ */
-const APP_VERSION = 'v1.8';
+const APP_VERSION = 'v1.9';
 
 // Preferencia por dispositivo: usar el teclado propio de la app.
 // Por defecto ACTIVADO (pensado para uso con bastón lector).
@@ -1784,7 +1784,7 @@ async function revalidarSilencioso() {
 
   try {
     const url = `${API_URL}/corral/validar?token=${encodeURIComponent(act.token)}&device_id=${encodeURIComponent(getDeviceId())}`;
-    const resp = await fetch(url, { method: 'GET' });
+    const resp = await fetch(url, { method: 'GET', cache: 'no-store' });
     const data = await resp.json();
 
     if (data.ok) {
